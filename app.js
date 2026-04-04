@@ -177,6 +177,9 @@ function showPage(id) {
     if (id === 'dashboard') renderDashboard();
     if (id === 'transactions') renderTransactions();
     if (id === 'stats') renderStats();
+    
+    // Antigravity Transition
+    initAntigravityAnimations();
 }
 
 /* ── Sidebar ─────────────────────────────────── */
@@ -338,7 +341,44 @@ function refreshAll() {
     if (activePage === 'dashboard') renderDashboard();
     if (activePage === 'transactions') renderTransactions();
     if (activePage === 'stats') renderStats();
+    
+    initAntigravityAnimations();
 }
+
+/* ── Antigravity Animations ─────────────────── */
+function initAntigravityAnimations() {
+    if (typeof gsap === 'undefined') return;
+
+    // Staggered entrance for cards and sections
+    gsap.fromTo('.card, .section-block, .tx-item', 
+        { 
+            opacity: 0, 
+            y: 30, 
+            rotateX: -10,
+            scale: 0.95
+        }, 
+        { 
+            opacity: 1, 
+            y: 0, 
+            rotateX: 0,
+            scale: 1,
+            duration: 0.8, 
+            stagger: 0.05, 
+            ease: "expo.out",
+            clearProps: "all"
+        }
+    );
+
+    // Subtle floating for balance card
+    gsap.to('.card--balance', {
+        y: -5,
+        duration: 3,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut"
+    });
+}
+
 
 /* ── Sidebar balance ─────────────────────────── */
 function renderSidebarBalance() {
