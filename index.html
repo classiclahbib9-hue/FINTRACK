@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f1117" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="FinTrack" />
+  <meta name="description" content="Personal income and expense tracker. Beautiful, fast, and works offline." />
+  <title>FinTrack – Personal Finance</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0"
+    rel="stylesheet" />
+</head>
+
+<body>
+
+  <!-- Login Overlay -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-card">
+      <div class="login-logo">
+        <span class="logo-icon">🔒</span>
+        <span class="logo-text">FinTrack Secure</span>
+      </div>
+      <p class="login-subtitle">Please enter your credentials</p>
+
+      <form id="loginForm" class="login-form">
+        <div class="form-group">
+          <label for="loginUser">Username</label>
+          <input type="text" id="loginUser" required placeholder="Enter username" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="loginPass">Password</label>
+          <input type="password" id="loginPass" required placeholder="Enter password" autocomplete="current-password">
+        </div>
+        <div class="error-msg" id="loginError"
+          style="display:none; color: var(--red); font-size: 0.85rem; margin-bottom: 1rem;">Incorrect username or
+          password</div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Unlock App</button>
+      </form>
+    </div>
+  </div>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">💰</span>
+        <span class="logo-text">FinTrack</span>
+      </div>
+      <button class="sidebar-close" id="sidebarClose" aria-label="Close menu">
+        <span class="material-symbols-rounded">close</span>
+      </button>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-page="dashboard" id="nav-dashboard">
+        <span class="material-symbols-rounded">dashboard</span>
+        <span>Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-page="transactions" id="nav-transactions">
+        <span class="material-symbols-rounded">receipt_long</span>
+        <span>Transactions</span>
+      </a>
+      <a href="#" class="nav-item" data-page="stats" id="nav-stats">
+        <span class="material-symbols-rounded">bar_chart</span>
+        <span>Statistics</span>
+      </a>
+    </nav>
+    <div class="sidebar-import">
+      <button class="import-nav-btn" id="importNavBtn">
+        <span class="material-symbols-rounded">upload_file</span>
+        <span>Import Excel / CSV</span>
+      </button>
+      <button class="import-nav-btn" id="bgNavBtn" style="margin-top: 10px;">
+        <span class="material-symbols-rounded">wallpaper</span>
+        <span>Change Background</span>
+      </button>
+      <button class="import-nav-btn" id="bgRemoveBtn"
+        style="margin-top: 10px; display: none; background: rgba(239, 68, 68, 0.1); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.2);">
+        <span class="material-symbols-rounded">delete</span>
+        <span>Remove Background</span>
+      </button>
+      <input type="file" id="bgInput" accept="image/*" style="display:none;" />
+
+      <button class="import-nav-btn" id="changePasswordBtn"
+        style="margin-top: 20px; background: rgba(99, 102, 241, 0.1); color: var(--primary); border: 1px solid rgba(99, 102, 241, 0.2);">
+        <span class="material-symbols-rounded">password</span>
+        <span>Change Password</span>
+      </button>
+
+      <button class="import-nav-btn" id="logoutBtn"
+        style="margin-top: 10px; background: rgba(239, 68, 68, 0.1); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.2);">
+        <span class="material-symbols-rounded">logout</span>
+        <span>Log Out</span>
+      </button>
+    </div>
+    <div class="sidebar-footer">
+      <div class="sidebar-balance-label">Total Balance</div>
+      <div class="sidebar-balance" id="sidebarBalance">€0.00</div>
+    </div>
+  </aside>
+
+  <!-- Overlay -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Top Bar -->
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="Open menu">
+        <span class="material-symbols-rounded">menu</span>
+      </button>
+      <h1 class="page-title" id="pageTitle">Dashboard</h1>
+      <button class="add-btn" id="addBtnTop" aria-label="Add transaction">
+        <span class="material-symbols-rounded">add</span>
+      </button>
+    </header>
+
+    <!-- Pages -->
+    <div class="pages">
+
+      <!-- DASHBOARD PAGE -->
+      <section class="page active" id="page-dashboard">
+        <div class="summary-cards">
+          <div class="card card--balance">
+            <div class="card-label">Total Balance</div>
+            <div class="card-value" id="totalBalance">€0.00</div>
+            <div class="card-month-total" id="dashboardMonthTotalContainer">
+              <span class="month-label">This month:</span>
+              <span class="month-value" id="dashboardMonthTotal">€0.00</span>
+            </div>
+            <div class="card-sub" id="balanceChange"></div>
+          </div>
+          <div class="card card--income">
+            <div class="card-icon"><span class="material-symbols-rounded">trending_up</span></div>
+            <div class="card-label">Income</div>
+            <div class="card-value" id="totalIncome">€0.00</div>
+          </div>
+          <div class="card card--expense">
+            <div class="card-icon"><span class="material-symbols-rounded">trending_down</span></div>
+            <div class="card-label">Expenses</div>
+            <div class="card-value" id="totalExpense">€0.00</div>
+          </div>
+        </div>
+
+        <!-- Savings Goal -->
+        <div class="section-block">
+          <div class="section-header">
+            <h2 class="section-title">Savings Goal</h2>
+            <button class="link-btn" id="setGoalBtn">Set Goal</button>
+          </div>
+          <div class="goal-card" id="goalWidget" style="display: none;">
+            <div class="goal-header">
+              <div class="goal-info">
+                <span class="goal-target-name" id="goalName">Car</span>
+                <span class="goal-target-amount" id="goalAmount">€0.00</span>
+              </div>
+              <div class="goal-remaining" id="goalRemaining">€0.00 remaining</div>
+            </div>
+            <div class="goal-progress-wrap">
+              <div class="goal-progress-bar" id="goalProgressBar" style="width: 0%;"></div>
+            </div>
+            <div class="goal-footer">
+              <span class="goal-avg" id="goalAvg">Avg savings: €0.00/mo</span>
+              <span class="goal-eta" id="goalEta">ETA: -- months</span>
+            </div>
+          </div>
+          <div class="empty-state" id="noGoalWidget">
+            <span class="material-symbols-rounded">flag</span>
+            <p>No savings goal set.<br>Set a target to track your progress!</p>
+          </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="section-block">
+          <div class="section-header">
+            <h2 class="section-title">Monthly Overview</h2>
+            <select id="chartYear" class="select-pill"></select>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="barChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="section-block">
+          <div class="section-header">
+            <h2 class="section-title">Recent Transactions</h2>
+            <button class="link-btn" data-page="transactions">View all</button>
+          </div>
+          <div class="transaction-list" id="recentList">
+            <div class="empty-state">
+              <span class="material-symbols-rounded">account_balance_wallet</span>
+              <p>No transactions yet.<br>Tap <strong>+</strong> to add one!</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TRANSACTIONS PAGE -->
+      <section class="page" id="page-transactions">
+        <div class="transaction-total-bar" id="transactionTotalBar">
+          <span class="total-label">Total for period:</span>
+          <span class="total-value" id="transactionTotalAmount">€0.00</span>
+        </div>
+        <div class="filters-bar">
+          <div class="search-wrap">
+            <span class="material-symbols-rounded search-icon">search</span>
+            <input type="text" id="searchInput" placeholder="Search transactions…" class="search-input" />
+          </div>
+          <div class="filter-chips">
+            <button class="chip active" data-filter="all">All</button>
+            <button class="chip" data-filter="income">Income</button>
+            <button class="chip" data-filter="expense">Expense</button>
+          </div>
+          <div class="filter-row">
+            <select id="filterCategory" class="select-pill">
+              <option value="">All Categories</option>
+            </select>
+            <select id="filterMonth" class="select-pill">
+              <option value="">All Months</option>
+            </select>
+          </div>
+        </div>
+        <div class="transaction-list" id="allList">
+          <div class="empty-state">
+            <span class="material-symbols-rounded">receipt_long</span>
+            <p>No transactions match your filters.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- STATS PAGE -->
+      <section class="page" id="page-stats">
+        <div class="section-block">
+          <div class="section-header">
+            <h2 class="section-title">Analysis by Category</h2>
+            <select id="statsMonth" class="select-pill"></select>
+          </div>
+
+          <div class="stats-container">
+            <!-- Expenses Chart -->
+            <div class="stats-chart-block">
+              <h3 class="stats-sub-title">Spending</h3>
+              <div class="donut-wrapper">
+                <canvas id="donutChart"></canvas>
+                <div class="donut-center">
+                  <div class="donut-total-label">Total</div>
+                  <div class="donut-total-value" id="donutTotal">€0</div>
+                </div>
+              </div>
+              <div class="category-legend" id="categoryLegend"></div>
+            </div>
+
+            <!-- Income Chart -->
+            <div class="stats-chart-block">
+              <h3 class="stats-sub-title">Income</h3>
+              <div class="donut-wrapper">
+                <canvas id="donutChartIncome"></canvas>
+                <div class="donut-center">
+                  <div class="donut-total-label">Total</div>
+                  <div class="donut-total-value" id="donutTotalIncome">€0</div>
+                </div>
+              </div>
+              <div class="category-legend" id="categoryLegendIncome"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-header">
+            <h2 class="section-title">Income vs Expenses</h2>
+          </div>
+          <div class="stats-grid" id="statsGrid"></div>
+        </div>
+      </section>
+
+    </div><!-- /pages -->
+
+    <!-- FAB -->
+    <button class="fab" id="fab" aria-label="Add transaction">
+      <span class="material-symbols-rounded">add</span>
+    </button>
+
+  </main><!-- /main -->
+
+  <!-- MODAL: Add / Edit Transaction -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">Add Transaction</h2>
+        <button class="modal-close" id="modalClose" aria-label="Close">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+
+      <!-- Type tabs -->
+      <div class="type-tabs">
+        <button class="type-tab active" data-type="expense" id="tabExpense">
+          <span class="material-symbols-rounded">trending_down</span> Expense
+        </button>
+        <button class="type-tab" data-type="income" id="tabIncome">
+          <span class="material-symbols-rounded">trending_up</span> Income
+        </button>
+      </div>
+
+      <form id="txForm" novalidate>
+        <input type="hidden" id="txId" />
+
+        <div class="form-group">
+          <label class="form-label" for="txAmount">Amount</label>
+          <div class="amount-wrap">
+            <span class="currency-symbol">€</span>
+            <input type="number" id="txAmount" class="form-input amount-input" placeholder="0.00" min="0.01" step="0.01"
+              required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="txCategory">Category</label>
+          <div class="custom-dropdown" id="txCategoryDropdown">
+            <div class="custom-dropdown-selected" id="txCategorySelected">
+              <span id="txCategorySelectedContent">Select Category</span>
+              <span class="material-symbols-rounded">expand_more</span>
+            </div>
+            <div class="custom-dropdown-options" id="txCategoryOptions">
+              <!-- Options populated by JS -->
+            </div>
+          </div>
+          <input type="hidden" id="txCategory" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="txDate">Date</label>
+          <input type="date" id="txDate" class="form-input" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="txNote">Note <span class="optional">(optional)</span></label>
+          <input type="text" id="txNote" class="form-input" placeholder="e.g. Grocery run at Lidl" maxlength="80" />
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn--ghost" id="deleteBtn" style="display:none">
+            <span class="material-symbols-rounded">delete</span> Delete
+          </button>
+          <button type="submit" class="btn btn--primary" id="saveBtn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- MODAL: Set Savings Goal -->
+  <div class="modal-backdrop" id="goalBackdrop">
+    <div class="modal" id="goalModal" role="dialog" aria-modal="true" aria-labelledby="goalTitle">
+      <div class="modal-header">
+        <h2 class="modal-title" id="goalTitle">Set Savings Goal</h2>
+        <button class="modal-close" id="goalClose" aria-label="Close">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+      <form id="goalForm" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="goalInputName">What are you saving for?</label>
+          <input type="text" id="goalInputName" class="form-input" placeholder="e.g. Dream Car, House deposit"
+            required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="goalInputAmount">Target Amount</label>
+          <div class="amount-wrap">
+            <span class="currency-symbol">€</span>
+            <input type="number" id="goalInputAmount" class="form-input amount-input" placeholder="0.00" min="1"
+              step="0.01" required />
+          </div>
+        </div>
+        <div class="modal-actions" style="justify-content: space-between;">
+          <button type="button" class="btn btn--ghost" id="clearGoalBtn" style="color: #ef4444;">
+            <span class="material-symbols-rounded">delete</span> Clear
+          </button>
+          <button type="submit" class="btn btn--primary">Save Goal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- IMPORT MODAL -->
+  <div class="modal-backdrop" id="importBackdrop">
+    <div class="modal import-modal" id="importModal" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+
+      <!-- Step 1: Drop zone -->
+      <div id="importStep1">
+        <div class="modal-header">
+          <h2 class="modal-title" id="importTitle">Import Transactions</h2>
+          <button class="modal-close" id="importClose" aria-label="Close">
+            <span class="material-symbols-rounded">close</span>
+          </button>
+        </div>
+        <div class="drop-zone" id="dropZone">
+          <span class="material-symbols-rounded drop-icon">upload_file</span>
+          <p class="drop-title">Drop your Excel or CSV file here</p>
+          <p class="drop-sub">.xlsx · .xls · .csv supported</p>
+          <label class="btn btn--primary drop-browse-btn">
+            Browse file
+            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" />
+          </label>
+        </div>
+        <div class="import-tip">
+          <span class="material-symbols-rounded" style="font-size:16px;color:var(--accent)">info</span>
+          Your file needs at least a <strong>Date</strong>, <strong>Amount</strong>, and <strong>Type</strong>
+          (income/expense) column.
+          Column names are matched automatically.
+        </div>
+      </div>
+
+      <!-- Step 2: Map columns -->
+      <div id="importStep2" style="display:none">
+        <div class="modal-header">
+          <h2 class="modal-title">Map Columns</h2>
+          <button class="modal-close" id="importClose2" aria-label="Close">
+            <span class="material-symbols-rounded">close</span>
+          </button>
+        </div>
+        <p class="map-hint">We detected the columns below. Confirm or adjust the mapping:</p>
+        <div class="map-grid" id="mapGrid"></div>
+        <div class="modal-actions" style="margin-top:16px">
+          <button class="btn btn--ghost" id="importBack"
+            style="flex:0 0 auto;padding:13px 16px;background:var(--surface3);color:var(--text-dim)">Back</button>
+          <button class="btn btn--primary" id="importPreviewBtn">Preview →</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Preview & confirm -->
+      <div id="importStep3" style="display:none">
+        <div class="modal-header">
+          <h2 class="modal-title">Preview Import</h2>
+          <button class="modal-close" id="importClose3" aria-label="Close">
+            <span class="material-symbols-rounded">close</span>
+          </button>
+        </div>
+        <div class="preview-info" id="previewInfo"></div>
+        <div class="preview-table-wrap">
+          <table class="preview-table" id="previewTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Category</th>
+                <th>Note</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="previewBody"></tbody>
+          </table>
+        </div>
+        <div class="import-merge-row">
+          <label class="merge-label">
+            <input type="radio" name="mergeMode" value="merge" checked /> Merge with existing data
+          </label>
+          <label class="merge-label">
+            <input type="radio" name="mergeMode" value="replace" /> Replace all existing data
+          </label>
+        </div>
+        <div class="modal-actions" style="margin-top:16px">
+          <button class="btn btn--ghost" id="importBack2"
+            style="flex:0 0 auto;padding:13px 16px;background:var(--surface3);color:var(--text-dim)">Back</button>
+          <button class="btn btn--primary" id="importConfirmBtn">
+            <span class="material-symbols-rounded">check</span> Import All
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js');
+      });
+    }
+  </script>
+  <!-- MODAL: Change Password -->
+  <div class="modal-backdrop" id="passwordBackdrop">
+    <div class="modal" id="passwordModal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h2 class="modal-title" id="passwordModalTitle">Security Challenge</h2>
+        <button class="modal-close" id="closePasswordBtn" aria-label="Close">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+      <div class="modal-body" style="padding: 24px;">
+        <!-- Challenge Step -->
+        <div id="passwordStep1">
+          <p style="margin-bottom: 12px; font-size: 14px; color: var(--text-dim);">manayou chatchin?</p>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <input type="text" id="securityAnswer" class="form-input" placeholder="Type your response"
+              autocomplete="off" />
+          </div>
+          <div class="error-msg" id="securityError"
+            style="display:none; color: var(--red); font-size: 0.85rem; margin-bottom: 1rem;">Incorrect response.</div>
+          <button class="btn btn--primary" id="securityCheckBtn" style="width: 100%;">Verify</button>
+        </div>
+
+        <!-- New Password Step -->
+        <div id="passwordStep2" style="display:none;">
+          <p style="margin-bottom: 12px; font-size: 14px; color: var(--text-dim);">Identity verified. Enter your new
+            password.</p>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <input type="password" id="newAppPassword" class="form-input" placeholder="New Password"
+              autocomplete="new-password" />
+          </div>
+          <button class="btn btn--primary" id="savePasswordBtn" style="width: 100%;">Save New Password</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Custom Category -->
+  <div class="modal-backdrop" id="customCatBackdrop">
+    <div class="modal" id="customCatModal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h2 class="modal-title">New Category</h2>
+        <button class="modal-close" id="closeCustomCatBtn" aria-label="Close">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+      <div class="modal-body" style="padding: 24px;">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" for="newCatName">Category Name</label>
+          <input type="text" id="newCatName" class="form-input" placeholder="e.g. Subscriptions" />
+        </div>
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label class="form-label" for="newCatEmoji">Emoji (optional)</label>
+          <input type="text" id="newCatEmoji" class="form-input" placeholder="e.g. 🍿" maxlength="2" />
+        </div>
+        <button class="btn btn--primary" id="saveCustomCatBtn" style="width: 100%;">Add Category</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDY3lsrN74evhncxgu8V9bEfw7VUTPMlyg",
+      authDomain: "fintrackers-506db.firebaseapp.com",
+      projectId: "fintrackers-506db",
+      storageBucket: "fintrackers-506db.firebasestorage.app",
+      messagingSenderId: "110036898771",
+      appId: "1:110036898771:web:3e4b9ca6f3696491535526",
+      measurementId: "G-Z80QPKZF3V"
+    };
+
+    // Initialize Firebase and make it globally available to app.js
+    const app = initializeApp(firebaseConfig);
+    window.db = getFirestore(app);
+    window.fbCollection = collection;
+    window.fbAddDoc = addDoc;
+    window.fbGetDocs = getDocs;
+    window.fbOnSnapshot = onSnapshot;
+    window.fbDoc = doc;
+    window.fbUpdateDoc = updateDoc;
+    window.fbDeleteDoc = deleteDoc;
+    window.fbWriteBatch = writeBatch;
+  </script>
+
+  <!-- App Script -->
+  <script src="app.js?v=2"></script>
+</body>
+
+</html>

@@ -1,0 +1,1666 @@
+[
+  {
+    "id": "inv_sample_01",
+    "type": "expense",
+    "amount": 2500.0,
+    "category": "Investment",
+    "date": "2026-03-15",
+    "note": "Initial investment in S&P 500"
+  },
+  {
+    "id": "0hzib1kodj",
+    "type": "income",
+    "amount": 176730.11,
+    "category": "Freelance",
+    "date": "2026-03-01",
+    "note": "Total profit – March 2026"
+  },
+  {
+    "id": "pxl8tg3kb0",
+    "type": "expense",
+    "amount": 4920.0,
+    "category": "Food",
+    "date": "2026-03-01",
+    "note": "house food – 2026"
+  },
+  {
+    "id": "7cl2piyxow",
+    "type": "expense",
+    "amount": 450.0,
+    "category": "Other",
+    "date": "2026-03-01",
+    "note": "Other/books – 2026"
+  },
+  {
+    "id": "t1oeft7alo",
+    "type": "income",
+    "amount": 70850.0,
+    "category": "Freelance",
+    "date": "2026-03-01",
+    "note": "Total profit – March 2026"
+  },
+  {
+    "id": "7q532rsswa",
+    "type": "income",
+    "amount": 3000.0,
+    "category": "Freelance",
+    "date": "2026-03-01",
+    "note": "DELL LATITUDE 5500 → PAUMELLERIE"
+  },
+  {
+    "id": "00hur7s2kl",
+    "type": "expense",
+    "amount": 56650.0,
+    "category": "Shopping",
+    "date": "2026-03-01",
+    "note": "Purchase: DELL LATITUDE 5500"
+  },
+  {
+    "id": "mvugzjxy4y",
+    "type": "expense",
+    "amount": 13520.0,
+    "category": "Food",
+    "date": "2026-02-01",
+    "note": "house food – 2026"
+  },
+  {
+    "id": "4f0bbbdpl7",
+    "type": "expense",
+    "amount": 720.0,
+    "category": "Transport",
+    "date": "2026-02-01",
+    "note": "Moto – 2026"
+  },
+  {
+    "id": "9ozi37izfq",
+    "type": "expense",
+    "amount": 3500.0,
+    "category": "Other",
+    "date": "2026-02-01",
+    "note": "internet+phone – 2026"
+  },
+  {
+    "id": "kqswsgh8wv",
+    "type": "expense",
+    "amount": 950.0,
+    "category": "Housing",
+    "date": "2026-02-01",
+    "note": "Home – 2026"
+  },
+  {
+    "id": "ils7sxs2k0",
+    "type": "expense",
+    "amount": 600.0,
+    "category": "Health",
+    "date": "2026-02-01",
+    "note": "Health – 2026"
+  },
+  {
+    "id": "wu0pmfrfrk",
+    "type": "expense",
+    "amount": 2650.0,
+    "category": "Other",
+    "date": "2026-02-01",
+    "note": "mom – 2026"
+  },
+  {
+    "id": "039oewh4nm",
+    "type": "expense",
+    "amount": 4500.0,
+    "category": "Other",
+    "date": "2026-02-01",
+    "note": "Other/books – 2026"
+  },
+  {
+    "id": "s0lto9b1w0",
+    "type": "income",
+    "amount": 135992.0,
+    "category": "Freelance",
+    "date": "2026-02-01",
+    "note": "Total profit – February 2026"
+  },
+  {
+    "id": "y402lyonjr",
+    "type": "expense",
+    "amount": 150.0,
+    "category": "Other",
+    "date": "2026-02-01",
+    "note": "wife – 2026"
+  },
+  {
+    "id": "jara21nek8",
+    "type": "expense",
+    "amount": 150.0,
+    "category": "Other",
+    "date": "2026-02-01",
+    "note": "cosmetics – 2026"
+  },
+  {
+    "id": "uem3a1o49s",
+    "type": "expense",
+    "amount": 11150.0,
+    "category": "Food",
+    "date": "2026-01-01",
+    "note": "Food – 2026"
+  },
+  {
+    "id": "6sh3cu5lav",
+    "type": "expense",
+    "amount": 8440.0,
+    "category": "Food",
+    "date": "2025-12-01",
+    "note": "Food – 2025"
+  },
+  {
+    "id": "exabmfjcn0",
+    "type": "expense",
+    "amount": 500.0,
+    "category": "Transport",
+    "date": "2025-12-01",
+    "note": "Moto – 2025"
+  },
+  {
+    "id": "57ltdp4kwj",
+    "type": "expense",
+    "amount": 4300.0,
+    "category": "Other",
+    "date": "2025-12-01",
+    "note": "internet+phone – 2025"
+  },
+  {
+    "id": "thvjvy7uvf",
+    "type": "expense",
+    "amount": 4000.0,
+    "category": "Other",
+    "date": "2025-12-01",
+    "note": "power – 2025"
+  },
+  {
+    "id": "gony3vagtt",
+    "type": "expense",
+    "amount": 12500.0,
+    "category": "Health",
+    "date": "2025-12-01",
+    "note": "Health – 2025"
+  },
+  {
+    "id": "thjxm3i2jv",
+    "type": "expense",
+    "amount": 4000.0,
+    "category": "Other",
+    "date": "2025-12-01",
+    "note": "mom – 2025"
+  },
+  {
+    "id": "owagws1e5c",
+    "type": "expense",
+    "amount": 17000.0,
+    "category": "Shopping",
+    "date": "2025-12-01",
+    "note": "Tech – 2025"
+  },
+  {
+    "id": "eda3sn3c9d",
+    "type": "income",
+    "amount": 140579.42,
+    "category": "Freelance",
+    "date": "2025-12-01",
+    "note": "Total profit – December 2025"
+  },
+  {
+    "id": "rjpgh8hzu4",
+    "type": "expense",
+    "amount": 7900.0,
+    "category": "Food",
+    "date": "2025-11-01",
+    "note": "Food – 2025"
+  },
+  {
+    "id": "y88nvxvmvi",
+    "type": "expense",
+    "amount": 450.0,
+    "category": "Transport",
+    "date": "2025-11-01",
+    "note": "Moto – 2025"
+  },
+  {
+    "id": "fzn21975t4",
+    "type": "expense",
+    "amount": 4200.0,
+    "category": "Other",
+    "date": "2025-11-01",
+    "note": "internet+phone – 2025"
+  },
+  {
+    "id": "f1as39zfk8",
+    "type": "expense",
+    "amount": 5000.0,
+    "category": "Housing",
+    "date": "2025-11-01",
+    "note": "home – 2025"
+  },
+  {
+    "id": "2c3y5qdck9",
+    "type": "expense",
+    "amount": 3500.0,
+    "category": "Health",
+    "date": "2025-11-01",
+    "note": "Health – 2025"
+  },
+  {
+    "id": "pb0s70yt64",
+    "type": "expense",
+    "amount": 4000.0,
+    "category": "Other",
+    "date": "2025-11-01",
+    "note": "mom – 2025"
+  },
+  {
+    "id": "qsh245n26n",
+    "type": "expense",
+    "amount": 2800.0,
+    "category": "Shopping",
+    "date": "2025-11-01",
+    "note": "Tech – 2025"
+  },
+  {
+    "id": "8nhahf4pdl",
+    "type": "expense",
+    "amount": 500.0,
+    "category": "Other",
+    "date": "2025-11-01",
+    "note": "sada9a – 2025"
+  },
+  {
+    "id": "yrlnnkfjut",
+    "type": "expense",
+    "amount": 200.0,
+    "category": "Other",
+    "date": "2025-11-01",
+    "note": "FAMILLY – 2025"
+  },
+  {
+    "id": "asdbefou56",
+    "type": "expense",
+    "amount": 2000.0,
+    "category": "Other",
+    "date": "2025-11-01",
+    "note": "GYM – 2025"
+  },
+  {
+    "id": "sm8543drjn",
+    "type": "expense",
+    "amount": 2000.0,
+    "category": "Other",
+    "date": "2025-11-01",
+    "note": "GYM NOTRUTION – 2025"
+  },
+  {
+    "id": "63ehogwffn",
+    "type": "income",
+    "amount": 200577.28,
+    "category": "Freelance",
+    "date": "2025-11-01",
+    "note": "Total profit – November 2025"
+  },
+  {
+    "id": "uuf33ftkvr",
+    "type": "expense",
+    "amount": 9540.0,
+    "category": "Food",
+    "date": "2025-10-01",
+    "note": "Food – 2025"
+  },
+  {
+    "id": "7qzwh0a9cv",
+    "type": "expense",
+    "amount": 950.0,
+    "category": "Transport",
+    "date": "2025-10-01",
+    "note": "Moto – 2025"
+  },
+  {
+    "id": "6m4mio653m",
+    "type": "expense",
+    "amount": 3500.0,
+    "category": "Other",
+    "date": "2025-10-01",
+    "note": "internet+phone – 2025"
+  },
+  {
+    "id": "kt2r6vhh2r",
+    "type": "expense",
+    "amount": 11750.0,
+    "category": "Health",
+    "date": "2025-10-01",
+    "note": "Health – 2025"
+  },
+  {
+    "id": "r3md1sbo8j",
+    "type": "expense",
+    "amount": 2600.0,
+    "category": "Other",
+    "date": "2025-10-01",
+    "note": "mom – 2025"
+  },
+  {
+    "id": "1gsby697sw",
+    "type": "expense",
+    "amount": 3000.0,
+    "category": "Other",
+    "date": "2025-10-01",
+    "note": "wedding – 2025"
+  },
+  {
+    "id": "pg9cwlppbq",
+    "type": "income",
+    "amount": 224060.21,
+    "category": "Freelance",
+    "date": "2025-10-01",
+    "note": "Total profit – October 2025"
+  },
+  {
+    "id": "1nk18m43ox",
+    "type": "income",
+    "amount": 4770.0,
+    "category": "Freelance",
+    "date": "2025-09-18",
+    "note": "DELL LATITUDE 5400 → EPICES INDIENNE"
+  },
+  {
+    "id": "57lbkbm2q0",
+    "type": "expense",
+    "amount": 42750.0,
+    "category": "Shopping",
+    "date": "2025-09-18",
+    "note": "Purchase: DELL LATITUDE 5400"
+  },
+  {
+    "id": "ke6iguahx4",
+    "type": "income",
+    "amount": 5260.0,
+    "category": "Freelance",
+    "date": "2025-09-17",
+    "note": "DELL LATITUDE 5500 → YACINE ZEMOURITE"
+  },
+  {
+    "id": "odwve2mpwi",
+    "type": "expense",
+    "amount": 50250.0,
+    "category": "Shopping",
+    "date": "2025-09-17",
+    "note": "Purchase: DELL LATITUDE 5500"
+  },
+  {
+    "id": "kosy3n0d4z",
+    "type": "income",
+    "amount": 162562.39,
+    "category": "Freelance",
+    "date": "2025-09-01",
+    "note": "Total profit – September 2025"
+  },
+  {
+    "id": "4mitwh8gxb",
+    "type": "expense",
+    "amount": 5700.0,
+    "category": "Food",
+    "date": "2025-09-01",
+    "note": "Food – 2025"
+  },
+  {
+    "id": "hib94ah8y2",
+    "type": "expense",
+    "amount": 6500.0,
+    "category": "Shopping",
+    "date": "2025-09-01",
+    "note": "Clothes – 2025"
+  },
+  {
+    "id": "vbs99x9t8d",
+    "type": "expense",
+    "amount": 3500.0,
+    "category": "Other",
+    "date": "2025-09-01",
+    "note": "internet+phone – 2025"
+  },
+  {
+    "id": "ma3bq41siu",
+    "type": "expense",
+    "amount": 6000.0,
+    "category": "Other",
+    "date": "2025-09-01",
+    "note": "power – 2025"
+  },
+  {
+    "id": "ojhylaa0kn",
+    "type": "expense",
+    "amount": 300.0,
+    "category": "Health",
+    "date": "2025-09-01",
+    "note": "Health – 2025"
+  },
+  {
+    "id": "cxps9bapat",
+    "type": "expense",
+    "amount": 3600.0,
+    "category": "Shopping",
+    "date": "2025-09-01",
+    "note": "Tech – 2025"
+  },
+  {
+    "id": "as50smrxra",
+    "type": "expense",
+    "amount": 9150.0,
+    "category": "Other",
+    "date": "2025-09-01",
+    "note": "cosmetics – 2025"
+  },
+  {
+    "id": "uzzdyhdpea",
+    "type": "expense",
+    "amount": 10000.0,
+    "category": "Other",
+    "date": "2025-09-01",
+    "note": "wifey – 2025"
+  },
+  {
+    "id": "9n14xal0bt",
+    "type": "expense",
+    "amount": 18960.0,
+    "category": "Other",
+    "date": "2025-09-01",
+    "note": "VACANCE – 2025"
+  },
+  {
+    "id": "aq5vu93wpd",
+    "type": "income",
+    "amount": 192421.93,
+    "category": "Freelance",
+    "date": "2025-09-01",
+    "note": "Total profit – September 2025"
+  },
+  {
+    "id": "7v2q2j3wt1",
+    "type": "income",
+    "amount": 4800.0,
+    "category": "Freelance",
+    "date": "2025-08-31",
+    "note": "DELL LATITUDE 5480"
+  },
+  {
+    "id": "4x0t1s1yam",
+    "type": "expense",
+    "amount": 42000.0,
+    "category": "Shopping",
+    "date": "2025-08-31",
+    "note": "Purchase: DELL LATITUDE 5480"
+  },
+  {
+    "id": "l2ottuvwmt",
+    "type": "income",
+    "amount": 4320.0,
+    "category": "Freelance",
+    "date": "2025-08-25",
+    "note": "DELL LATITUDE 5500"
+  },
+  {
+    "id": "5jyi0je5qd",
+    "type": "expense",
+    "amount": 55000.0,
+    "category": "Shopping",
+    "date": "2025-08-25",
+    "note": "Purchase: DELL LATITUDE 5500"
+  },
+  {
+    "id": "vxha0wvpjn",
+    "type": "expense",
+    "amount": 13620.0,
+    "category": "Food",
+    "date": "2025-08-01",
+    "note": "Food – 2025"
+  },
+  {
+    "id": "oqx0z0dw32",
+    "type": "expense",
+    "amount": 700.0,
+    "category": "Transport",
+    "date": "2025-08-01",
+    "note": "Moto – 2025"
+  },
+  {
+    "id": "mdfr3vqp62",
+    "type": "expense",
+    "amount": 1500.0,
+    "category": "Other",
+    "date": "2025-08-01",
+    "note": "internet+phone – 2025"
+  },
+  {
+    "id": "423945ih4z",
+    "type": "expense",
+    "amount": 1000.0,
+    "category": "Health",
+    "date": "2025-08-01",
+    "note": "Health – 2025"
+  },
+  {
+    "id": "afuip6317d",
+    "type": "expense",
+    "amount": 2000.0,
+    "category": "Other",
+    "date": "2025-08-01",
+    "note": "mom – 2025"
+  },
+  {
+    "id": "5mjezfl241",
+    "type": "expense",
+    "amount": 250.0,
+    "category": "Other",
+    "date": "2025-08-01",
+    "note": "sada9a – 2025"
+  },
+  {
+    "id": "udd8wgd94e",
+    "type": "income",
+    "amount": 225020.64,
+    "category": "Freelance",
+    "date": "2025-08-01",
+    "note": "Total profit – August 2025"
+  },
+  {
+    "id": "3qz2u6zhrx",
+    "type": "expense",
+    "amount": 16145.0,
+    "category": "Food",
+    "date": "2025-07-01",
+    "note": "Food – 2025"
+  },
+  {
+    "id": "noq0c2hs92",
+    "type": "expense",
+    "amount": 4100.0,
+    "category": "Other",
+    "date": "2025-07-01",
+    "note": "internet+phone – 2025"
+  },
+  {
+    "id": "mb0vs8ferf",
+    "type": "expense",
+    "amount": 800.0,
+    "category": "Health",
+    "date": "2025-07-01",
+    "note": "Health – 2025"
+  },
+  {
+    "id": "9ujyyf5iuy",
+    "type": "expense",
+    "amount": 1000.0,
+    "category": "Other",
+    "date": "2025-07-01",
+    "note": "mom – 2025"
+  },
+  {
+    "id": "hdvb95v94b",
+    "type": "expense",
+    "amount": 2500.0,
+    "category": "Shopping",
+    "date": "2025-07-01",
+    "note": "Tech – 2025"
+  },
+  {
+    "id": "g765nd4fg4",
+    "type": "expense",
+    "amount": 13000.0,
+    "category": "Other",
+    "date": "2025-07-01",
+    "note": "wifey – 2025"
+  },
+  {
+    "id": "1f0hfrm8h3",
+    "type": "income",
+    "amount": 215409.38,
+    "category": "Freelance",
+    "date": "2025-07-01",
+    "note": "Total profit – July 2025"
+  },
+  {
+    "id": "pzglisg4aq",
+    "type": "expense",
+    "amount": 12695.0,
+    "category": "Food",
+    "date": "2025-06-01",
+    "note": "Food – 2025"
+  },
+  {
+    "id": "hmvocw7sqv",
+    "type": "expense",
+    "amount": 5300.0,
+    "category": "Shopping",
+    "date": "2025-06-01",
+    "note": "Clothes – 2025"
+  },
+  {
+    "id": "a6y68kkgxy",
+    "type": "expense",
+    "amount": 900.0,
+    "category": "Transport",
+    "date": "2025-06-01",
+    "note": "Moto – 2025"
+  },
+  {
+    "id": "ejxdjh1dmu",
+    "type": "expense",
+    "amount": 4400.0,
+    "category": "Other",
+    "date": "2025-06-01",
+    "note": "internet+phone – 2025"
+  },
+  {
+    "id": "rtpj76k5sc",
+    "type": "expense",
+    "amount": 7000.0,
+    "category": "Health",
+    "date": "2025-06-01",
+    "note": "Health – 2025"
+  },
+  {
+    "id": "5rqcrsogbp",
+    "type": "expense",
+    "amount": 500.0,
+    "category": "Other",
+    "date": "2025-06-01",
+    "note": "mom – 2025"
+  },
+  {
+    "id": "5mwvr5icrs",
+    "type": "expense",
+    "amount": 1000.0,
+    "category": "Other",
+    "date": "2025-06-01",
+    "note": "GYM NOTRUTION – 2025"
+  },
+  {
+    "id": "bmmgbrxs81",
+    "type": "expense",
+    "amount": 10985.0,
+    "category": "Other",
+    "date": "2025-06-01",
+    "note": "wifey – 2025"
+  },
+  {
+    "id": "hwha446ebj",
+    "type": "income",
+    "amount": 212205.25,
+    "category": "Freelance",
+    "date": "2025-06-01",
+    "note": "Total profit – June 2025"
+  },
+  {
+    "id": "l8z0z95m64",
+    "type": "income",
+    "amount": 157266.1,
+    "category": "Freelance",
+    "date": "2025-05-01",
+    "note": "Total profit – May 2025"
+  },
+  {
+    "id": "o686usu8x7",
+    "type": "expense",
+    "amount": 17635.0,
+    "category": "Food",
+    "date": "2025-05-01",
+    "note": "Food – 2025"
+  },
+  {
+    "id": "8r7iz9n39r",
+    "type": "expense",
+    "amount": 9800.0,
+    "category": "Shopping",
+    "date": "2025-05-01",
+    "note": "Clothes – 2025"
+  },
+  {
+    "id": "lnnf8dn1pg",
+    "type": "expense",
+    "amount": 350.0,
+    "category": "Transport",
+    "date": "2025-05-01",
+    "note": "Moto – 2025"
+  },
+  {
+    "id": "s8s1q3fuqx",
+    "type": "expense",
+    "amount": 3500.0,
+    "category": "Other",
+    "date": "2025-05-01",
+    "note": "internet+phone – 2025"
+  },
+  {
+    "id": "uxfmrq052z",
+    "type": "expense",
+    "amount": 2000.0,
+    "category": "Health",
+    "date": "2025-05-01",
+    "note": "Health – 2025"
+  },
+  {
+    "id": "ied0tani95",
+    "type": "expense",
+    "amount": 1000.0,
+    "category": "Other",
+    "date": "2025-05-01",
+    "note": "mom – 2025"
+  },
+  {
+    "id": "i3a4dx02z5",
+    "type": "expense",
+    "amount": 100.0,
+    "category": "Shopping",
+    "date": "2025-05-01",
+    "note": "Tech – 2025"
+  },
+  {
+    "id": "k65js0d7w9",
+    "type": "expense",
+    "amount": 2000.0,
+    "category": "Other",
+    "date": "2025-05-01",
+    "note": "mahdi – 2025"
+  },
+  {
+    "id": "3jp8w7u0y9",
+    "type": "expense",
+    "amount": 1500.0,
+    "category": "Other",
+    "date": "2025-05-01",
+    "note": "cosmetics – 2025"
+  },
+  {
+    "id": "yczfguyqt0",
+    "type": "expense",
+    "amount": 7750.0,
+    "category": "Other",
+    "date": "2025-05-01",
+    "note": "wifey – 2025"
+  },
+  {
+    "id": "20e01skjac",
+    "type": "income",
+    "amount": 154769.77,
+    "category": "Freelance",
+    "date": "2025-05-01",
+    "note": "Total profit – May 2025"
+  },
+  {
+    "id": "o8k7x319u5",
+    "type": "expense",
+    "amount": 6280.0,
+    "category": "Food",
+    "date": "2025-04-01",
+    "note": "Food – 2025"
+  },
+  {
+    "id": "bx0bezdzq2",
+    "type": "expense",
+    "amount": 3200.0,
+    "category": "Transport",
+    "date": "2025-04-01",
+    "note": "Moto – 2025"
+  },
+  {
+    "id": "h334wqwtw5",
+    "type": "expense",
+    "amount": 8500.0,
+    "category": "Health",
+    "date": "2025-04-01",
+    "note": "Health – 2025"
+  },
+  {
+    "id": "hcttafgjud",
+    "type": "expense",
+    "amount": 5000.0,
+    "category": "Other",
+    "date": "2025-04-01",
+    "note": "wedding – 2025"
+  },
+  {
+    "id": "mv3n1l6fzv",
+    "type": "expense",
+    "amount": 850.0,
+    "category": "Other",
+    "date": "2025-04-01",
+    "note": "Other/books – 2025"
+  },
+  {
+    "id": "kdigv90jti",
+    "type": "expense",
+    "amount": 2000.0,
+    "category": "Other",
+    "date": "2025-04-01",
+    "note": "GYM NOTRUTION – 2025"
+  },
+  {
+    "id": "qvicnehuzq",
+    "type": "income",
+    "amount": 139656.44,
+    "category": "Freelance",
+    "date": "2025-04-01",
+    "note": "Total profit – April 2025"
+  },
+  {
+    "id": "anu96bu5p4",
+    "type": "expense",
+    "amount": 10700.0,
+    "category": "Food",
+    "date": "2025-03-01",
+    "note": "Food – 2025"
+  },
+  {
+    "id": "xj3qpxfnnd",
+    "type": "expense",
+    "amount": 400.0,
+    "category": "Transport",
+    "date": "2025-03-01",
+    "note": "Moto – 2025"
+  },
+  {
+    "id": "g90gdxpv24",
+    "type": "expense",
+    "amount": 3500.0,
+    "category": "Other",
+    "date": "2025-03-01",
+    "note": "internet+phone – 2025"
+  },
+  {
+    "id": "j6rormaa8l",
+    "type": "expense",
+    "amount": 3500.0,
+    "category": "Other",
+    "date": "2025-03-01",
+    "note": "power – 2025"
+  },
+  {
+    "id": "x58ia5du02",
+    "type": "expense",
+    "amount": 10750.0,
+    "category": "Health",
+    "date": "2025-03-01",
+    "note": "Health – 2025"
+  },
+  {
+    "id": "vyo7httl4j",
+    "type": "expense",
+    "amount": 4000.0,
+    "category": "Other",
+    "date": "2025-03-01",
+    "note": "mom – 2025"
+  },
+  {
+    "id": "izpgqmq82g",
+    "type": "expense",
+    "amount": 4000.0,
+    "category": "Other",
+    "date": "2025-03-01",
+    "note": "wedding – 2025"
+  },
+  {
+    "id": "kx2gdeuxfh",
+    "type": "expense",
+    "amount": 200.0,
+    "category": "Shopping",
+    "date": "2025-03-01",
+    "note": "Tech – 2025"
+  },
+  {
+    "id": "vsj2y9my5d",
+    "type": "income",
+    "amount": 145734.03,
+    "category": "Freelance",
+    "date": "2025-03-01",
+    "note": "Total profit – March 2025"
+  },
+  {
+    "id": "jgr4m3m9r9",
+    "type": "expense",
+    "amount": 4460.0,
+    "category": "Food",
+    "date": "2025-02-01",
+    "note": "Food – 2025"
+  },
+  {
+    "id": "ttwxw8kz47",
+    "type": "expense",
+    "amount": 2500.0,
+    "category": "Other",
+    "date": "2025-02-01",
+    "note": "internet+phone – 2025"
+  },
+  {
+    "id": "2vse8laqsi",
+    "type": "expense",
+    "amount": 700.0,
+    "category": "Health",
+    "date": "2025-02-01",
+    "note": "Health – 2025"
+  },
+  {
+    "id": "wkv788rlhb",
+    "type": "expense",
+    "amount": 5400.0,
+    "category": "Food",
+    "date": "2025-01-01",
+    "note": "Food – 2025"
+  },
+  {
+    "id": "pjbqcov8t8",
+    "type": "expense",
+    "amount": 200.0,
+    "category": "Transport",
+    "date": "2025-01-01",
+    "note": "Moto – 2025"
+  },
+  {
+    "id": "6wdlroa07f",
+    "type": "expense",
+    "amount": 3500.0,
+    "category": "Other",
+    "date": "2025-01-01",
+    "note": "internet+phone – 2025"
+  },
+  {
+    "id": "rsipe1q47x",
+    "type": "expense",
+    "amount": 1980.0,
+    "category": "Health",
+    "date": "2025-01-01",
+    "note": "Health – 2025"
+  },
+  {
+    "id": "yyapu32o6t",
+    "type": "income",
+    "amount": 4500.0,
+    "category": "Freelance",
+    "date": "2025-01-01",
+    "note": "DELL LATITUDE 5400 → COMPTOIR ELNNOUR"
+  },
+  {
+    "id": "pigndw46fh",
+    "type": "expense",
+    "amount": 42750.0,
+    "category": "Shopping",
+    "date": "2025-01-01",
+    "note": "Purchase: DELL LATITUDE 5400"
+  },
+  {
+    "id": "vqtgkkcc5h",
+    "type": "income",
+    "amount": 5580.0,
+    "category": "Freelance",
+    "date": "2025-01-01",
+    "note": "LENOVO 450 → VERONA"
+  },
+  {
+    "id": "0bkttvf4sg",
+    "type": "expense",
+    "amount": 31000.0,
+    "category": "Shopping",
+    "date": "2025-01-01",
+    "note": "Purchase: LENOVO 450"
+  },
+  {
+    "id": "gp5864yhgz",
+    "type": "income",
+    "amount": 12350.0,
+    "category": "Freelance",
+    "date": "2025-01-01",
+    "note": "DELL LATITUDE 4500 → FAWZI"
+  },
+  {
+    "id": "lcj48tjdks",
+    "type": "expense",
+    "amount": 42650.0,
+    "category": "Shopping",
+    "date": "2025-01-01",
+    "note": "Purchase: DELL LATITUDE 4500"
+  },
+  {
+    "id": "nkfrbcxxp4",
+    "type": "expense",
+    "amount": 6930.0,
+    "category": "Food",
+    "date": "2024-12-01",
+    "note": "Food – 2024"
+  },
+  {
+    "id": "9gybiqlnk5",
+    "type": "expense",
+    "amount": 2700.0,
+    "category": "Shopping",
+    "date": "2024-12-01",
+    "note": "Clothes – 2024"
+  },
+  {
+    "id": "yyyqo0hn5n",
+    "type": "expense",
+    "amount": 380.0,
+    "category": "Transport",
+    "date": "2024-12-01",
+    "note": "Moto – 2024"
+  },
+  {
+    "id": "6ufhd6zkyt",
+    "type": "expense",
+    "amount": 1500.0,
+    "category": "Health",
+    "date": "2024-12-01",
+    "note": "Telecome – 2024"
+  },
+  {
+    "id": "nx36t93njm",
+    "type": "expense",
+    "amount": 3200.0,
+    "category": "Housing",
+    "date": "2024-12-01",
+    "note": "Électricité – 2024"
+  },
+  {
+    "id": "ooiir1jsjw",
+    "type": "expense",
+    "amount": 4210.0,
+    "category": "Health",
+    "date": "2024-12-01",
+    "note": "Health – 2024"
+  },
+  {
+    "id": "3ptbpx5q4o",
+    "type": "expense",
+    "amount": 39600.0,
+    "category": "Other",
+    "date": "2024-12-01",
+    "note": "Annem – 2024"
+  },
+  {
+    "id": "m95fowfpi2",
+    "type": "expense",
+    "amount": 1000.0,
+    "category": "Shopping",
+    "date": "2024-12-01",
+    "note": "Tech – 2024"
+  },
+  {
+    "id": "dpv6bwupns",
+    "type": "expense",
+    "amount": 850.0,
+    "category": "Other",
+    "date": "2024-12-01",
+    "note": "Other/books – 2024"
+  },
+  {
+    "id": "wg65ypyc8w",
+    "type": "expense",
+    "amount": 20000.0,
+    "category": "Other",
+    "date": "2024-12-01",
+    "note": "baba – 2024"
+  },
+  {
+    "id": "q46m2291rh",
+    "type": "expense",
+    "amount": 13600.0,
+    "category": "Other",
+    "date": "2024-12-01",
+    "note": "sada9a – 2024"
+  },
+  {
+    "id": "2cjewktwhi",
+    "type": "expense",
+    "amount": 14130.0,
+    "category": "Food",
+    "date": "2024-11-01",
+    "note": "Food – 2024"
+  },
+  {
+    "id": "vn01wfu0y2",
+    "type": "expense",
+    "amount": 6800.0,
+    "category": "Shopping",
+    "date": "2024-11-01",
+    "note": "Clothes – 2024"
+  },
+  {
+    "id": "a3loon6n66",
+    "type": "expense",
+    "amount": 4200.0,
+    "category": "Transport",
+    "date": "2024-11-01",
+    "note": "Moto – 2024"
+  },
+  {
+    "id": "6vl2wn97dh",
+    "type": "expense",
+    "amount": 2000.0,
+    "category": "Health",
+    "date": "2024-11-01",
+    "note": "Telecome – 2024"
+  },
+  {
+    "id": "0fnwqxjjpr",
+    "type": "expense",
+    "amount": 600.0,
+    "category": "Housing",
+    "date": "2024-11-01",
+    "note": "Électricité – 2024"
+  },
+  {
+    "id": "sprsjnvxxr",
+    "type": "expense",
+    "amount": 1350.0,
+    "category": "Health",
+    "date": "2024-11-01",
+    "note": "Health – 2024"
+  },
+  {
+    "id": "ibu4qxfddn",
+    "type": "expense",
+    "amount": 500.0,
+    "category": "Other",
+    "date": "2024-11-01",
+    "note": "Annem – 2024"
+  },
+  {
+    "id": "mphcvr1ryc",
+    "type": "expense",
+    "amount": 22430.0,
+    "category": "Other",
+    "date": "2024-11-01",
+    "note": "Other/books – 2024"
+  },
+  {
+    "id": "y14bwvdhop",
+    "type": "expense",
+    "amount": 7000.0,
+    "category": "Other",
+    "date": "2024-11-01",
+    "note": "3arss barri – 2024"
+  },
+  {
+    "id": "zpjkechjd3",
+    "type": "expense",
+    "amount": 3050.0,
+    "category": "Other",
+    "date": "2024-11-01",
+    "note": "sada9a – 2024"
+  },
+  {
+    "id": "duc9ytuudu",
+    "type": "expense",
+    "amount": 9250.0,
+    "category": "Food",
+    "date": "2024-10-01",
+    "note": "Food – 2024"
+  },
+  {
+    "id": "heqozonvzc",
+    "type": "expense",
+    "amount": 2200.0,
+    "category": "Shopping",
+    "date": "2024-10-01",
+    "note": "Clothes – 2024"
+  },
+  {
+    "id": "l3nhc4hzcd",
+    "type": "expense",
+    "amount": 13130.0,
+    "category": "Transport",
+    "date": "2024-10-01",
+    "note": "Moto – 2024"
+  },
+  {
+    "id": "6k9ueygc2z",
+    "type": "expense",
+    "amount": 3700.0,
+    "category": "Health",
+    "date": "2024-10-01",
+    "note": "Telecome – 2024"
+  },
+  {
+    "id": "l8jkaouvtg",
+    "type": "expense",
+    "amount": 1320.0,
+    "category": "Health",
+    "date": "2024-10-01",
+    "note": "Health – 2024"
+  },
+  {
+    "id": "z0p95rjvy9",
+    "type": "expense",
+    "amount": 1200.0,
+    "category": "Other",
+    "date": "2024-10-01",
+    "note": "Annem – 2024"
+  },
+  {
+    "id": "536bvz02v4",
+    "type": "expense",
+    "amount": 3108.0,
+    "category": "Other",
+    "date": "2024-10-01",
+    "note": "lakhtoba / l3arss – 2024"
+  },
+  {
+    "id": "ai5t9rp1pi",
+    "type": "expense",
+    "amount": 2136.0,
+    "category": "Shopping",
+    "date": "2024-10-01",
+    "note": "Tech – 2024"
+  },
+  {
+    "id": "qgc226nqd1",
+    "type": "expense",
+    "amount": 1250.0,
+    "category": "Other",
+    "date": "2024-10-01",
+    "note": "mahdi – 2024"
+  },
+  {
+    "id": "kranvns32q",
+    "type": "expense",
+    "amount": 3000.0,
+    "category": "Other",
+    "date": "2024-10-01",
+    "note": "Other – 2024"
+  },
+  {
+    "id": "ullskcsvoo",
+    "type": "expense",
+    "amount": 6460.0,
+    "category": "Food",
+    "date": "2024-09-01",
+    "note": "Food – 2024"
+  },
+  {
+    "id": "lisfqbc9ay",
+    "type": "expense",
+    "amount": 7200.0,
+    "category": "Shopping",
+    "date": "2024-09-01",
+    "note": "Clothes – 2024"
+  },
+  {
+    "id": "u77n9n0umu",
+    "type": "expense",
+    "amount": 1670.0,
+    "category": "Transport",
+    "date": "2024-09-01",
+    "note": "Moto – 2024"
+  },
+  {
+    "id": "bljshlpg7r",
+    "type": "expense",
+    "amount": 5200.0,
+    "category": "Health",
+    "date": "2024-09-01",
+    "note": "Telecome – 2024"
+  },
+  {
+    "id": "dj9pwcybrj",
+    "type": "expense",
+    "amount": 100.0,
+    "category": "Housing",
+    "date": "2024-09-01",
+    "note": "Home – 2024"
+  },
+  {
+    "id": "twnxzp2wyz",
+    "type": "expense",
+    "amount": 8200.0,
+    "category": "Housing",
+    "date": "2024-09-01",
+    "note": "Électricité – 2024"
+  },
+  {
+    "id": "jdaz4f2kgs",
+    "type": "expense",
+    "amount": 800.0,
+    "category": "Health",
+    "date": "2024-09-01",
+    "note": "Health – 2024"
+  },
+  {
+    "id": "xlsifi97oy",
+    "type": "expense",
+    "amount": 17570.0,
+    "category": "Other",
+    "date": "2024-09-01",
+    "note": "Other – 2024"
+  },
+  {
+    "id": "lit5cv0jr5",
+    "type": "expense",
+    "amount": 11080.0,
+    "category": "Food",
+    "date": "2024-08-01",
+    "note": "Food – 2024"
+  },
+  {
+    "id": "brfhylimjg",
+    "type": "expense",
+    "amount": 1500.0,
+    "category": "Health",
+    "date": "2024-08-01",
+    "note": "Telecome – 2024"
+  },
+  {
+    "id": "krgibl3ojg",
+    "type": "expense",
+    "amount": 2100.0,
+    "category": "Health",
+    "date": "2024-08-01",
+    "note": "Health – 2024"
+  },
+  {
+    "id": "a55cmbv7rv",
+    "type": "expense",
+    "amount": 1200.0,
+    "category": "Other",
+    "date": "2024-08-01",
+    "note": "Other – 2024"
+  },
+  {
+    "id": "zb6v5likxj",
+    "type": "expense",
+    "amount": 4720.0,
+    "category": "Food",
+    "date": "2024-06-01",
+    "note": "Food – 2024"
+  },
+  {
+    "id": "f3zz3l38j3",
+    "type": "expense",
+    "amount": 2500.0,
+    "category": "Health",
+    "date": "2024-06-01",
+    "note": "Telecome – 2024"
+  },
+  {
+    "id": "asn49pv1wn",
+    "type": "expense",
+    "amount": 300.0,
+    "category": "Housing",
+    "date": "2024-06-01",
+    "note": "Home – 2024"
+  },
+  {
+    "id": "0l2wb4gwz8",
+    "type": "expense",
+    "amount": 1500.0,
+    "category": "Health",
+    "date": "2024-06-01",
+    "note": "Health – 2024"
+  },
+  {
+    "id": "tblect1qgi",
+    "type": "expense",
+    "amount": 12000.0,
+    "category": "Other",
+    "date": "2024-06-01",
+    "note": "Other – 2024"
+  },
+  {
+    "id": "dwxi6hednz",
+    "type": "expense",
+    "amount": 12100.0,
+    "category": "Food",
+    "date": "2024-06-01",
+    "note": "Food – 2024"
+  },
+  {
+    "id": "iyj9ntxd4c",
+    "type": "expense",
+    "amount": 2500.0,
+    "category": "Health",
+    "date": "2024-06-01",
+    "note": "Telecome – 2024"
+  },
+  {
+    "id": "9pum22heva",
+    "type": "expense",
+    "amount": 35000.0,
+    "category": "Housing",
+    "date": "2024-06-01",
+    "note": "Home – 2024"
+  },
+  {
+    "id": "jrihppkucj",
+    "type": "expense",
+    "amount": 400.0,
+    "category": "Health",
+    "date": "2024-06-01",
+    "note": "Health – 2024"
+  },
+  {
+    "id": "8dfvdawnbf",
+    "type": "expense",
+    "amount": 1000.0,
+    "category": "Other",
+    "date": "2024-06-01",
+    "note": "Other – 2024"
+  },
+  {
+    "id": "j76rfzjbtz",
+    "type": "expense",
+    "amount": 5000.0,
+    "category": "Other",
+    "date": "2024-06-01",
+    "note": "lakhtoba / l3arss – 2024"
+  },
+  {
+    "id": "p88rwzcbaa",
+    "type": "expense",
+    "amount": 13000.0,
+    "category": "Food",
+    "date": "2024-05-01",
+    "note": "Food – 2024"
+  },
+  {
+    "id": "uj9t9ifbw2",
+    "type": "expense",
+    "amount": 14700.0,
+    "category": "Shopping",
+    "date": "2024-05-01",
+    "note": "Clothes – 2024"
+  },
+  {
+    "id": "ap6mkt88cy",
+    "type": "expense",
+    "amount": 700.0,
+    "category": "Transport",
+    "date": "2024-05-01",
+    "note": "Moto – 2024"
+  },
+  {
+    "id": "lqiwm57geb",
+    "type": "expense",
+    "amount": 2500.0,
+    "category": "Health",
+    "date": "2024-05-01",
+    "note": "Telecome – 2024"
+  },
+  {
+    "id": "4ibrjkx8ak",
+    "type": "expense",
+    "amount": 1800.0,
+    "category": "Housing",
+    "date": "2024-05-01",
+    "note": "Électricité – 2024"
+  },
+  {
+    "id": "ndupptg3gk",
+    "type": "expense",
+    "amount": 6700.0,
+    "category": "Health",
+    "date": "2024-05-01",
+    "note": "Health – 2024"
+  },
+  {
+    "id": "r3xf9v7o2f",
+    "type": "expense",
+    "amount": 5000.0,
+    "category": "Other",
+    "date": "2024-05-01",
+    "note": "Other – 2024"
+  },
+  {
+    "id": "ome2u2jbfu",
+    "type": "expense",
+    "amount": 10000.0,
+    "category": "Food",
+    "date": "2024-04-01",
+    "note": "Food – 2024"
+  },
+  {
+    "id": "fspbigcwiq",
+    "type": "expense",
+    "amount": 700.0,
+    "category": "Transport",
+    "date": "2024-04-01",
+    "note": "Moto – 2024"
+  },
+  {
+    "id": "8eqboypsd7",
+    "type": "expense",
+    "amount": 700.0,
+    "category": "Health",
+    "date": "2024-04-01",
+    "note": "Health – 2024"
+  },
+  {
+    "id": "i8bkxf2msq",
+    "type": "expense",
+    "amount": 15000.0,
+    "category": "Other",
+    "date": "2024-04-01",
+    "note": "Other – 2024"
+  },
+  {
+    "id": "3opln2jnsp",
+    "type": "expense",
+    "amount": 7500.0,
+    "category": "Food",
+    "date": "2024-03-01",
+    "note": "Food – 2024"
+  },
+  {
+    "id": "qdfhntlrfp",
+    "type": "expense",
+    "amount": 850.0,
+    "category": "Transport",
+    "date": "2024-03-01",
+    "note": "Moto – 2024"
+  },
+  {
+    "id": "dyeschohb7",
+    "type": "expense",
+    "amount": 2500.0,
+    "category": "Health",
+    "date": "2024-03-01",
+    "note": "Telecome – 2024"
+  },
+  {
+    "id": "apf6yhm6wv",
+    "type": "expense",
+    "amount": 25000.0,
+    "category": "Housing",
+    "date": "2024-03-01",
+    "note": "Home – 2024"
+  },
+  {
+    "id": "5q83g6hil8",
+    "type": "expense",
+    "amount": 3500.0,
+    "category": "Housing",
+    "date": "2024-03-01",
+    "note": "Électricité – 2024"
+  },
+  {
+    "id": "f5yyp99dxw",
+    "type": "expense",
+    "amount": 9000.0,
+    "category": "Other",
+    "date": "2024-03-01",
+    "note": "Other – 2024"
+  },
+  {
+    "id": "zb0jo55t0t",
+    "type": "expense",
+    "amount": 12000.0,
+    "category": "Food",
+    "date": "2024-01-01",
+    "note": "Food – 2024"
+  },
+  {
+    "id": "pf79tu2qov",
+    "type": "expense",
+    "amount": 5550.0,
+    "category": "Shopping",
+    "date": "2024-01-01",
+    "note": "Clothes – 2024"
+  },
+  {
+    "id": "7eeircd7o3",
+    "type": "expense",
+    "amount": 1000.0,
+    "category": "Transport",
+    "date": "2024-01-01",
+    "note": "Moto – 2024"
+  },
+  {
+    "id": "2ftxezzve7",
+    "type": "expense",
+    "amount": 2500.0,
+    "category": "Food",
+    "date": "2024-01-01",
+    "note": "Food – 2024"
+  },
+  {
+    "id": "bcykpgu3x6",
+    "type": "expense",
+    "amount": 4400.0,
+    "category": "Shopping",
+    "date": "2024-01-01",
+    "note": "Clothes – 2024"
+  },
+  {
+    "id": "sj3j8zb6z7",
+    "type": "expense",
+    "amount": 2400.0,
+    "category": "Transport",
+    "date": "2024-01-01",
+    "note": "Moto – 2024"
+  },
+  {
+    "id": "i9nxe5jkf6",
+    "type": "expense",
+    "amount": 2500.0,
+    "category": "Health",
+    "date": "2024-01-01",
+    "note": "Telecome – 2024"
+  },
+  {
+    "id": "aa5z525pps",
+    "type": "expense",
+    "amount": 470.0,
+    "category": "Health",
+    "date": "2024-01-01",
+    "note": "Health – 2024"
+  },
+  {
+    "id": "4ylb7rxtxy",
+    "type": "expense",
+    "amount": 9500.0,
+    "category": "Shopping",
+    "date": "2024-01-01",
+    "note": "Tech – 2024"
+  }
+]
