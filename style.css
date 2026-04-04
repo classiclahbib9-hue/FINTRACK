@@ -486,18 +486,22 @@ body {
 }
 
 .card-value {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
-  letter-spacing: -1px;
+  letter-spacing: -1.5px;
+  transition: transform 0.3s;
 }
 
 .card--balance .card-value {
-  font-size: 36px;
-  background: linear-gradient(135deg, #a5b4fc, #818cf8);
+  font-size: 48px;
+  background: linear-gradient(135deg, #f8fafc, #818cf8);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 15px var(--accent-glow));
+  margin: 10px 0;
 }
+
 
 .card--income .card-value {
   color: var(--green);
@@ -616,26 +620,27 @@ body {
 }
 
 .donut-wrapper canvas {
-  filter: drop-shadow(0 25px 35px rgba(0, 0, 0, 0.6));
-  transform: rotateX(15deg) translateZ(0);
-  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 35px 55px rgba(0, 0, 0, 0.7));
+  transform: rotateX(25deg) translateZ(0);
+  transition: transform 1s cubic-bezier(0.2, 1, 0.2, 1);
   cursor: pointer;
 }
 
 .donut-wrapper:hover canvas {
-  transform: rotateX(5deg) translateZ(20px) scale(1.05);
+  transform: rotateX(10deg) translateZ(30px) scale(1.08);
 }
 
 .donut-center {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) translateZ(30px);
+  transform: translate(-50%, -50%) translateZ(60px);
   text-align: center;
   pointer-events: none;
   z-index: 2;
-  text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  text-shadow: 0 8px 15px rgba(0,0,0,0.5);
 }
+
 
 .donut-total-label {
   font-size: 11px;
@@ -666,32 +671,47 @@ body {
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 13px;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.legend-item:hover {
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .legend-dot {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   flex-shrink: 0;
+  box-shadow: 0 0 10px currentColor;
 }
 
 .legend-label {
   flex: 1;
-  color: var(--text-dim);
+  color: var(--text);
+  font-weight: 500;
 }
 
 .legend-amount {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text);
 }
 
 .legend-pct {
   color: var(--text-muted);
-  font-size: 12px;
-  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--surface2);
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 8px;
 }
+
 
 /* ── Stats Charts Layout ── */
 .stats-container {

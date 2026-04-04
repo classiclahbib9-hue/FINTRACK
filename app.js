@@ -61,7 +61,8 @@ const CAT_EMOJI = {
     'Side Hustle': '⚡', 'Subscription': '📋',
 };
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const PALETTE = ['#6366f1', '#10d97e', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6', '#f97316', '#ec4899', '#14b8a6', '#a855f7'];
+const PALETTE = ['#818cf8', '#10f9a2', '#ff3e6c', '#f59e0b', '#06b6d4', '#8b5cf6', '#f97316', '#ec4899', '#14b8a6', '#a855f7'];
+
 
 const GOAL_KEY = 'fintrack_savings_goal';
 const BG_KEY = 'fintrack_bg';
@@ -826,18 +827,19 @@ function loadChartJS(cb) {
 function txHTML(t) {
     const emoji = CAT_EMOJI[t.category] || '💳';
     return `
-    <div class="tx-item" data-id="${t.id}">
+    <div class="tx-item" data-id="${t.id}" data-type="${t.type}">
       <div class="tx-icon ${t.type}">${emoji}</div>
       <div class="tx-info">
         <div class="tx-category">${t.category}</div>
         <div class="tx-note">${t.note || dateLabel(t.date)}</div>
       </div>
-      <div>
+      <div style="text-align: right;">
         <div class="tx-amount ${t.type}">${t.type === 'income' ? '+' : '-'}${fmt(t.amount)}</div>
         <div class="tx-date">${dateLabel(t.date)}</div>
       </div>
     </div>`;
 }
+
 
 function emptyStateHTML(icon, msg) {
     return `<div class="empty-state"><span class="material-symbols-rounded">${icon}</span><p>${msg}</p></div>`;
