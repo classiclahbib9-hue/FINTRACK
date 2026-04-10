@@ -12,7 +12,7 @@
   <title>FinTrack – Personal Finance</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=2" />
+  <link rel="stylesheet" href="style.css?v=3" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
@@ -84,29 +84,31 @@
       </a>
     </nav>
     <div class="sidebar-import">
+      <div class="sidebar-section-label">Tools</div>
       <button class="import-nav-btn" id="importNavBtn">
         <span class="material-symbols-rounded">upload_file</span>
         <span>Import Excel / CSV</span>
       </button>
-      <button class="import-nav-btn" id="bgNavBtn" style="margin-top: 10px;">
+      <button class="import-nav-btn" id="exportBackupBtn">
+        <span class="material-symbols-rounded">download</span>
+        <span>Export JSON Backup</span>
+      </button>
+      <button class="import-nav-btn" id="bgNavBtn">
         <span class="material-symbols-rounded">wallpaper</span>
         <span>Change Background</span>
       </button>
-      <button class="import-nav-btn" id="bgRemoveBtn"
-        style="margin-top: 10px; display: none; background: rgba(239, 68, 68, 0.1); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.2);">
+      <button class="import-nav-btn" id="bgRemoveBtn" style="display: none; color: var(--red);">
         <span class="material-symbols-rounded">delete</span>
         <span>Remove Background</span>
       </button>
       <input type="file" id="bgInput" accept="image/*" style="display:none;" />
 
-      <button class="import-nav-btn" id="changePasswordBtn"
-        style="margin-top: 20px; background: rgba(99, 102, 241, 0.1); color: var(--primary); border: 1px solid rgba(99, 102, 241, 0.2);">
+      <div class="sidebar-section-label" style="margin-top: 6px;">Account</div>
+      <button class="import-nav-btn" id="changePasswordBtn">
         <span class="material-symbols-rounded">password</span>
         <span>Change Password</span>
       </button>
-
-      <button class="import-nav-btn" id="logoutBtn"
-        style="margin-top: 10px; background: rgba(239, 68, 68, 0.1); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.2);">
+      <button class="import-nav-btn" id="logoutBtn" style="color: var(--red);">
         <span class="material-symbols-rounded">logout</span>
         <span>Log Out</span>
       </button>
@@ -564,6 +566,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDY3lsrN74evhncxgu8V9bEfw7VUTPMlyg",
@@ -575,21 +578,93 @@
       measurementId: "G-Z80QPKZF3V"
     };
 
-    // Initialize Firebase and make it globally available to app.js
     const app = initializeApp(firebaseConfig);
-    window.db = getFirestore(app);
+    const db  = getFirestore(app);
+    const auth = getAuth(app);
+
+    // ── Expose Firestore helpers to app.js (non-module)
+    window.db           = db;
     window.fbCollection = collection;
-    window.fbAddDoc = addDoc;
-    window.fbGetDocs = getDocs;
+    window.fbAddDoc     = addDoc;
+    window.fbGetDocs    = getDocs;
     window.fbOnSnapshot = onSnapshot;
-    window.fbDoc = doc;
-    window.fbUpdateDoc = updateDoc;
-    window.fbDeleteDoc = deleteDoc;
+    window.fbDoc        = doc;
+    window.fbUpdateDoc  = updateDoc;
+    window.fbDeleteDoc  = deleteDoc;
     window.fbWriteBatch = writeBatch;
+
+    // ── Subscribe to Firestore INSIDE the module, right after auth confirms.
+    // This avoids every cross-script timing/race issue completely.
+    signInAnonymously(auth).catch(err => console.error('Auth failed:', err));
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) return;
+      window.firebaseUid = user.uid;
+
+      // Attach real-time listener now that auth is valid
+      const txRef = collection(db, 'transactions');
+      onSnapshot(txRef, (snapshot) => {
+        // Make sure app.js has initialised transactions array
+        if (!window._transactions) window._transactions = [];
+
+        // Incremental patch – only process changed docs
+        snapshot.docChanges().forEach(change => {
+          if (change.type === 'added') {
+            if (!window._transactions.find(t => t.id === change.doc.id)) {
+              window._transactions.push({ id: change.doc.id, ...change.doc.data() });
+            }
+          } else if (change.type === 'modified') {
+            const idx = window._transactions.findIndex(t => t.id === change.doc.id);
+            if (idx !== -1) window._transactions[idx] = { id: change.doc.id, ...change.doc.data() };
+          } else if (change.type === 'removed') {
+            window._transactions = window._transactions.filter(t => t.id !== change.doc.id);
+          }
+        });
+
+        // Sort descending by date
+        window._transactions.sort((a, b) => b.date.localeCompare(a.date));
+
+        // ── PERSISTENCE: Instant Local Mirror ── (Ensures data is NEVER lost)
+        localStorage.setItem('fintrack_cache_transactions', JSON.stringify(window._transactions));
+
+        // Sync into app.js transactions array and trigger a debounced render
+        if (typeof transactions !== 'undefined') {
+          transactions = window._transactions;
+        }
+
+        if (typeof scheduleRefresh === 'function') scheduleRefresh();
+
+      }, err => {
+        console.error('Firestore error:', err);
+        if (typeof showToast === 'function') showToast('Cloud sync error. Loading cache...');
+        
+        // Fallback to cache if Firestore fails
+        const cache = localStorage.getItem('fintrack_cache_transactions');
+        if (cache && typeof transactions !== 'undefined') {
+           transactions = JSON.parse(cache);
+           if (typeof scheduleRefresh === 'function') scheduleRefresh();
+        }
+      });
+    });
+
+    // ── Export Utility ──
+    window.exportDataToJSON = () => {
+       if (!window._transactions || window._transactions.length === 0) {
+           if (typeof showToast === 'function') showToast('No data to export');
+           return;
+       }
+       const blob = new Blob([JSON.stringify(window._transactions, null, 2)], { type: 'application/json' });
+       const url = URL.createObjectURL(blob);
+       const a = document.createElement('a');
+       a.href = url;
+       a.download = `fintrack_backup_${new Date().toISOString().slice(0, 10)}.json`;
+       a.click();
+       URL.revokeObjectURL(url);
+    };
   </script>
 
   <!-- App Script -->
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=4"></script>
 </body>
 
 </html>

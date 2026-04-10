@@ -1,0 +1,52 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── transactions collection ──────────────────────────────────
+    // Only Firebase-authenticated requests are allowed (anonymous sign-in
+    // provides a valid auth token, blocking raw internet attackers).
+    match /transactions/{txId} {
+
+      // Allow read if authenticated
+      allow read: if request.auth != null;
+
+      // Allow create if authenticated AND the document has the required fields
+      // with correct types and sane value ranges
+      allow create: if request.auth != null
+        && isValidTransaction(request.resource.data);
+
+      // Allow update if authenticated AND the new data is still valid
+      allow update: if request.auth != null
+        && isValidTransaction(request.resource.data);
+
+      // Allow delete if authenticated
+      allow delete: if request.auth != null;
+    }
+
+    // Block access to every other collection not explicitly listed above
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// ── Validation helper ────────────────────────────────────────────
+function isValidTransaction(data) {
+  return data.keys().hasAll(['type', 'amount', 'category', 'date'])
+    // type must be 'income' or 'expense'
+    && data.type in ['income', 'expense']
+    // amount must be a positive number not exceeding 10 million
+    && data.amount is number
+    && data.amount > 0
+    && data.amount <= 10000000
+    // category must be a non-empty string under 50 chars
+    && data.category is string
+    && data.category.size() > 0
+    && data.category.size() <= 50
+    // date must be a string in YYYY-MM-DD format (10 chars)
+    && data.date is string
+    && data.date.size() == 10
+    // note is optional; if present must be a string under 200 chars
+    && (!data.keys().hasAny(['note']) || (data.note is string && data.note.size() <= 200));
+}

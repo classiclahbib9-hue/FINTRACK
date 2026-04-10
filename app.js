@@ -76,6 +76,13 @@ let barChartInstance = null;
 let donutChartInstance = null;
 let donutChartInstanceIncome = null;
 
+// ── Debounced render ─────────────────────────
+let _refreshTimer = null;
+function scheduleRefresh() {
+    if (_refreshTimer) clearTimeout(_refreshTimer);
+    _refreshTimer = setTimeout(() => { refreshAll(); }, 120);
+}
+
 /* ── Boot ───────────────────────────────────── */
 function loadData() {
     // Load local settings
@@ -104,24 +111,18 @@ function loadData() {
         }
     } catch { /* ignore error */ }
 
-    // Connect to Firestore
-    if (window.db) {
-        const txRef = window.fbCollection(window.db, 'transactions');
-        window.fbOnSnapshot(txRef, (snapshot) => {
-            const data = [];
-            snapshot.forEach(doc => {
-                data.push({ id: doc.id, ...doc.data() });
-            });
-            // Sort by date descending
-            transactions = data.sort((a, b) => b.date.localeCompare(a.date));
-            refreshAll();
-        }, (error) => {
-            console.error("Firestore Listen Error:", error);
-            showToast("Failed to sync with cloud");
-        });
-    } else {
-        showToast("Firebase not initialized");
-    }
+    // ── DATA PERSISTENCE FAIL-SAFE ──
+    // Immediately load from localStorage so the UI is NEVER empty while Firestore connects.
+    try {
+        const cache = localStorage.getItem('fintrack_cache_transactions');
+        if (cache) {
+            transactions = JSON.parse(cache);
+            refreshAll(); 
+        }
+    } catch (e) { console.warn("Cache load failed", e); }
+
+    // NOTE: Real-time Firestore subscription is handled by the module script in index.html.
+    // It automatically updates 'transactions' and triggers scheduleRefresh() when sync arrives.
 }
 
 function saveData() {
@@ -339,36 +340,35 @@ async function deleteTransaction() {
 
 function refreshAll() {
     renderSidebarBalance();
-    if (activePage === 'dashboard') renderDashboard();
-    if (activePage === 'transactions') renderTransactions();
-    if (activePage === 'stats') renderStats();
     
-    initAntigravityAnimations();
+    // ── Performance: Only render the current view ──
+    if (activePage === 'dashboard') renderDashboard();
+    else if (activePage === 'transactions') renderTransactions();
+    else if (activePage === 'stats') renderStats();
+    
+    // Only animate if we actually changed something meaningful 
+    // and wait a moment for the browser to settle.
+    if (_refreshTimer) clearTimeout(_refreshTimer);
+    _refreshTimer = setTimeout(() => { initAntigravityAnimations(); }, 300);
 }
 
 /* ── Antigravity Animations ─────────────────── */
 function initAntigravityAnimations() {
     if (typeof gsap === 'undefined') return;
 
-    // Staggered entrance for cards and sections
-    gsap.fromTo('.card, .section-block, .tx-item', 
-        { 
-            opacity: 0, 
-            y: 30, 
-            rotateX: -10,
-            scale: 0.95
-        }, 
-        { 
-            opacity: 1, 
-            y: 0, 
-            rotateX: 0,
-            scale: 1,
-            duration: 0.8, 
-            stagger: 0.05, 
-            ease: "expo.out",
-            clearProps: "all"
-        }
+    // Staggered entrance: only animate items currently in the viewport
+    // or keep the stagger brief to avoid heavy CPU load.
+    gsap.fromTo('.card, .section-block', 
+        { opacity: 0, y: 20, scale: 0.98 }, 
+        { opacity: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.05, ease: "power2.out", clearProps: "all" }
     );
+
+    // Only animate the first few transaction items for initial "wow" effect
+    // without killing mobile performance.
+    gsap.fromTo('.tx-item', 
+        { opacity: 0, x: -10 }, 
+        { opacity: 1, x: 0, duration: 0.4, stagger: 0.02, ease: "power1.out", clearProps: "all" }
+    ).delay(0.2);
 
     // Subtle floating for balance card
     gsap.to('.card--balance', {
@@ -538,10 +538,23 @@ function applyFilters() {
         String(t.amount).includes(search)
     );
 
+    // ── Pagination logic ──
+    const LIMIT = window._txPageLimit || 50;
+    const paged = filtered.slice(0, LIMIT);
+
     const list = document.getElementById('allList');
-    list.innerHTML = filtered.length
-        ? filtered.map(txHTML).join('')
-        : emptyStateHTML('receipt_long', 'No transactions match your filters.');
+    let html = paged.length ? paged.map(txHTML).join('') : emptyStateHTML('receipt_long', 'No transactions match your filters.');
+
+    // Add 'Load More' button if more data exists
+    if (filtered.length > LIMIT) {
+        html += `
+        <div class="load-more-wrap">
+            <button class="btn btn--ghost load-more-btn" onclick="loadMoreTransactions()">
+                Load more (${filtered.length - LIMIT} remaining)
+            </button>
+        </div>`;
+    }
+    list.innerHTML = html;
     list.querySelectorAll('.tx-item').forEach(el => el.addEventListener('click', () => openModal(el.dataset.id)));
 
     const inc = totalIncome(filtered);
@@ -573,6 +586,7 @@ function populateCategoryFilter() {
 
 function populateMonthFilter() {
     const sel = document.getElementById('filterMonth');
+    if (!sel) return;
     const current = sel.value;
     const months = [...new Set(transactions.map(t => t.date.slice(0, 7)))].sort().reverse();
     sel.innerHTML = '<option value="">All Months</option>' +
@@ -581,6 +595,11 @@ function populateMonthFilter() {
             const label = MONTH_NAMES[parseInt(mo) - 1] + ' ' + y;
             return `<option value="${m}" ${m === current ? 'selected' : ''}>${label}</option>`;
         }).join('');
+}
+
+function loadMoreTransactions() {
+    window._txPageLimit = (window._txPageLimit || 50) + 50;
+    applyFilters();
 }
 
 /* ── Stats Page ──────────────────────────────── */
@@ -1420,14 +1439,22 @@ function initAuth() {
     });
 }
 
-// Call initImport after DOM is ready (already inside DOMContentLoaded via init)
+// Call init functions after DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
+    loadData(); // <── LOAD CACHE & SETTINGS INSTANTLY
     initAuth();
     initImport();
     initSavingsGoal();
     initBackground();
     initPasswordChange();
     initCustomCategories();
+
+    // Export button listener
+    const expBtn = document.getElementById('exportBackupBtn');
+    if (expBtn) expBtn.addEventListener('click', () => { 
+        window.exportDataToJSON(); 
+        closeSidebar();
+    });
 });
 
 function initCustomCategories() {
