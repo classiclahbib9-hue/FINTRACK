@@ -82,8 +82,8 @@ if (!localStorage.getItem(ACCOUNTS_KEY)) {
     localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accountBases));
 }
 
-window.activeAccount = 'all';
-window.transactions = [];
+let activeAccount = 'all';
+let transactions = [];
 
 const BASE_BALANCE = 80475.94; // cash (51000) + card (29475.94) 
 let savingsGoal = null;
@@ -183,9 +183,10 @@ function totalExpense(txs) {
     return txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
 }
 function balance(txs) {
-    const base = activeAccount === 'all'
+    const acct = activeAccount || 'all';
+    const base = acct === 'all'
         ? (accountBases.cash + accountBases.card)
-        : accountBases[activeAccount] || 0;
+        : accountBases[acct] || 0;
     // Only transactions on/after the cutoff date adjust the balance.
     // Historical imports are for tracking only and don't touch the starting amounts.
     const cutoff = accountBases.cutoffDate || '1900-01-01';
@@ -195,8 +196,8 @@ function balance(txs) {
 
 // Returns only transactions relevant to the current account view
 function visibleTxs() {
-    const acct = window.activeAccount || 'all';
-    const txs = window.transactions || [];
+    const acct = activeAccount || 'all';
+    const txs = transactions || [];
     if (acct === 'all') return txs;
     return txs.filter(t => (t.account || 'cash') === acct);
 }
@@ -204,7 +205,7 @@ function visibleTxs() {
 // Switch account view and re-render everything
 function setActiveAccount(acct) {
     console.log('Switching to account:', acct);
-    window.activeAccount = acct;
+    activeAccount = acct;
     
     // Update UI tabs
     document.querySelectorAll('.acct-tab').forEach(btn => {
@@ -263,7 +264,7 @@ function openModal(id = null) {
     document.getElementById('txDate').value = tx ? tx.date : todayISO();
     document.getElementById('txNote').value = tx ? tx.note || '' : '';
     // Restore account — default to the active dashboard account (or 'card')
-    const txAccount = tx ? (tx.account || 'cash') : (window.activeAccount === 'all' ? 'cash' : window.activeAccount);
+    const txAccount = tx ? (tx.account || 'cash') : (activeAccount === 'all' ? 'cash' : activeAccount);
     setModalAccount(txAccount);
 
     // delete button
@@ -458,7 +459,7 @@ function renderDashboard() {
     document.getElementById('totalExpense').textContent = fmt(exp);
 
     // Label under balance card
-    const acctLabel = window.activeAccount === 'all' ? 'Cash + Card' : (window.activeAccount === 'cash' ? '💵 Cash' : '💳 Card');
+    const acctLabel = activeAccount === 'all' ? 'Cash + Card' : (activeAccount === 'cash' ? '💵 Cash' : '💳 Card');
     const sub = document.getElementById('balanceChange');
     sub.textContent = acctLabel + (txs.length ? ` · ${txs.length} transaction${txs.length !== 1 ? 's' : ''}` : '');
 
