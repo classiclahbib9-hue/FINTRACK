@@ -89,6 +89,7 @@ let savedBg = null;
 let editId = null;
 let activePage = 'dashboard';
 let filterType = 'all';
+let filterAccount = 'all';
 let barChartInstance = null;
 let donutChartInstance = null;
 let donutChartInstanceIncome = null;
@@ -601,8 +602,9 @@ function applyFilters() {
     const cat = document.getElementById('filterCategory').value;
     const month = document.getElementById('filterMonth').value;
 
-    let filtered = [...visibleTxs()].sort((a, b) => b.date.localeCompare(a.date));
+    let filtered = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
     if (filterType !== 'all') filtered = filtered.filter(t => t.type === filterType);
+    if (filterAccount !== 'all') filtered = filtered.filter(t => (t.account || 'cash') === filterAccount);
     if (cat) filtered = filtered.filter(t => t.category === cat);
     if (month) filtered = filtered.filter(t => t.date.slice(0, 7) === month);
     if (search) filtered = filtered.filter(t =>
@@ -652,7 +654,8 @@ function applyFilters() {
 function populateCategoryFilter() {
     const sel = document.getElementById('filterCategory');
     const current = sel.value;
-    const allCats = [...new Set(visibleTxs().map(t => t.category))].sort();
+    const base = filterAccount === 'all' ? transactions : transactions.filter(t => (t.account || 'cash') === filterAccount);
+    const allCats = [...new Set(base.map(t => t.category))].sort();
     sel.innerHTML = '<option value="">All Categories</option>' +
         allCats.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${CAT_EMOJI[c] || ''} ${c}</option>`).join('');
 }
@@ -995,11 +998,22 @@ function init() {
     document.getElementById('searchInput').addEventListener('input', applyFilters);
     document.getElementById('filterCategory').addEventListener('change', applyFilters);
     document.getElementById('filterMonth').addEventListener('change', applyFilters);
-    document.querySelectorAll('.chip').forEach(chip => {
+    // Type filter chips (All / Income / Expense)
+    document.querySelectorAll('.chip:not(.acct-chip)').forEach(chip => {
         chip.addEventListener('click', () => {
-            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.chip:not(.acct-chip)').forEach(c => c.classList.remove('active'));
             chip.classList.add('active');
             filterType = chip.dataset.filter;
+            applyFilters();
+        });
+    });
+
+    // Account filter chips (All Accounts / Cash / Card)
+    document.querySelectorAll('.acct-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            document.querySelectorAll('.acct-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            filterAccount = chip.dataset.accountFilter;
             applyFilters();
         });
     });

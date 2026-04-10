@@ -872,6 +872,18 @@ body.has-custom-bg .spatial-bg {
   color: var(--red);
 }
 
+/* Account filter chips */
+.acct-chip[data-account-filter="cash"].active {
+  background: rgba(251,191,36,0.12);
+  border-color: rgba(251,191,36,0.3);
+  color: #fbbf24;
+}
+.acct-chip[data-account-filter="card"].active {
+  background: rgba(124,141,252,0.12);
+  border-color: rgba(124,141,252,0.3);
+  color: var(--accent);
+}
+
 .filter-row {
   display: flex;
   gap: 8px;
