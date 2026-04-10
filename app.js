@@ -66,19 +66,17 @@ const PALETTE = ['#818cf8', '#10f9a2', '#ff3e6c', '#f59e0b', '#06b6d4', '#8b5cf6
 
 const GOAL_KEY = 'fintrack_savings_goal';
 const BG_KEY   = 'fintrack_bg';
-const ACCOUNTS_KEY = 'fintrack_account_bases_v2'; // v2 forces a clean reset
+const ACCOUNTS_KEY = 'fintrack_account_bases_v3'; // bump version = fresh reset
 
-// Starting balance per account.
-// cutoffDate: only transactions ON or AFTER this date affect the balance.
-// Transactions before it are historical and already baked into the base amounts.
-const DEFAULT_ACCOUNT_BASES = {
-    cash: 51000,
-    card: 29475.94,
-    cutoffDate: '2026-04-10'   // today — new transactions from here will adjust balances
-};
+// The balance is stored directly here and updated on every add/edit/delete.
+// Historical transactions never touch these numbers.
+const DEFAULT_ACCOUNT_BASES = { cash: 51000, card: 29475.94 };
 let accountBases = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || 'null') || { ...DEFAULT_ACCOUNT_BASES };
-// Always persist so future sessions retain the cutoff
 if (!localStorage.getItem(ACCOUNTS_KEY)) {
+    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accountBases));
+}
+
+function saveAccountBases() {
     localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accountBases));
 }
 
@@ -182,16 +180,18 @@ function totalIncome(txs) {
 function totalExpense(txs) {
     return txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
 }
-function balance(txs) {
+function balance() {
     const acct = activeAccount || 'all';
-    const base = acct === 'all'
-        ? (accountBases.cash + accountBases.card)
-        : accountBases[acct] || 0;
-    // Only transactions on/after the cutoff date adjust the balance.
-    // Historical imports are for tracking only and don't touch the starting amounts.
-    const cutoff = accountBases.cutoffDate || '1900-01-01';
-    const live = txs.filter(t => t.date >= cutoff);
-    return base + totalIncome(live) - totalExpense(live);
+    if (acct === 'all') return accountBases.cash + accountBases.card;
+    return accountBases[acct] || 0;
+}
+
+// Call after every add / edit / delete to keep accountBases in sync
+function applyTxEffect(type, amount, account, reverse = false) {
+    const acct = account || 'cash';
+    const delta = (type === 'income' ? amount : -amount) * (reverse ? -1 : 1);
+    accountBases[acct] = (accountBases[acct] || 0) + delta;
+    saveAccountBases();
 }
 
 // Returns only transactions relevant to the current account view
@@ -367,11 +367,18 @@ async function saveTransaction(e) {
 
     try {
         if (editId) {
+            // Reverse the old transaction's effect before applying the new one
+            const oldTx = transactions.find(t => t.id === editId);
+            if (oldTx) applyTxEffect(oldTx.type, oldTx.amount, oldTx.account || 'cash', true);
+            applyTxEffect(type, amount, account);
+
             const docRef = window.fbDoc(window.db, 'transactions', editId);
             await window.fbUpdateDoc(docRef, { type, amount, category, date, note, account });
             syncToSheet("EDIT", { transaction: { id: editId, type, amount, category, date, note, account } });
             showToast('Transaction updated ✓');
         } else {
+            applyTxEffect(type, amount, account);
+
             const txRef = window.fbCollection(window.db, 'transactions');
             const newDoc = await window.fbAddDoc(txRef, { type, amount, category, date, note, account });
             syncToSheet("ADD", { transaction: { id: newDoc.id, type, amount, category, date, note, account } });
@@ -387,6 +394,9 @@ async function saveTransaction(e) {
 async function deleteTransaction() {
     if (!editId) return;
     try {
+        const tx = transactions.find(t => t.id === editId);
+        if (tx) applyTxEffect(tx.type, tx.amount, tx.account || 'cash', true);
+
         const deletedId = editId;
         const docRef = window.fbDoc(window.db, 'transactions', editId);
         await window.fbDeleteDoc(docRef);
@@ -444,7 +454,7 @@ function initAntigravityAnimations() {
 
 /* ── Sidebar balance ─────────────────────────── */
 function renderSidebarBalance() {
-    document.getElementById('sidebarBalance').textContent = fmt(balance(visibleTxs()));
+    document.getElementById('sidebarBalance').textContent = fmt(balance());
 }
 
 /* ── Dashboard ──────────────────────────────── */
@@ -452,9 +462,8 @@ function renderDashboard() {
     const txs = visibleTxs();
     const inc = totalIncome(txs);
     const exp = totalExpense(txs);
-    const bal = balance(txs);
 
-    document.getElementById('totalBalance').textContent = fmt(bal);
+    document.getElementById('totalBalance').textContent = fmt(balance());
     document.getElementById('totalIncome').textContent = fmt(inc);
     document.getElementById('totalExpense').textContent = fmt(exp);
 
