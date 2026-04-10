@@ -66,11 +66,21 @@ const PALETTE = ['#818cf8', '#10f9a2', '#ff3e6c', '#f59e0b', '#06b6d4', '#8b5cf6
 
 const GOAL_KEY = 'fintrack_savings_goal';
 const BG_KEY   = 'fintrack_bg';
-const ACCOUNTS_KEY = 'fintrack_account_bases';
+const ACCOUNTS_KEY = 'fintrack_account_bases_v2'; // v2 forces a clean reset
 
-// Starting balance per account — persisted so user can edit later
-const DEFAULT_ACCOUNT_BASES = { cash: 51000, card: 29475.94 };
+// Starting balance per account.
+// cutoffDate: only transactions ON or AFTER this date affect the balance.
+// Transactions before it are historical and already baked into the base amounts.
+const DEFAULT_ACCOUNT_BASES = {
+    cash: 51000,
+    card: 29475.94,
+    cutoffDate: '2026-04-10'   // today — new transactions from here will adjust balances
+};
 let accountBases = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || 'null') || { ...DEFAULT_ACCOUNT_BASES };
+// Always persist so future sessions retain the cutoff
+if (!localStorage.getItem(ACCOUNTS_KEY)) {
+    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accountBases));
+}
 
 window.activeAccount = 'all';
 window.transactions = [];
@@ -176,7 +186,11 @@ function balance(txs) {
     const base = activeAccount === 'all'
         ? (accountBases.cash + accountBases.card)
         : accountBases[activeAccount] || 0;
-    return base + totalIncome(txs) - totalExpense(txs);
+    // Only transactions on/after the cutoff date adjust the balance.
+    // Historical imports are for tracking only and don't touch the starting amounts.
+    const cutoff = accountBases.cutoffDate || '1900-01-01';
+    const live = txs.filter(t => t.date >= cutoff);
+    return base + totalIncome(live) - totalExpense(live);
 }
 
 // Returns only transactions relevant to the current account view
