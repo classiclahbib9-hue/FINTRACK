@@ -65,7 +65,17 @@ const PALETTE = ['#818cf8', '#10f9a2', '#ff3e6c', '#f59e0b', '#06b6d4', '#8b5cf6
 
 
 const GOAL_KEY = 'fintrack_savings_goal';
-const BG_KEY = 'fintrack_bg';
+const BG_KEY   = 'fintrack_bg';
+const ACCOUNTS_KEY = 'fintrack_account_bases';
+
+// Starting balance per account — persisted so user can edit later
+const DEFAULT_ACCOUNT_BASES = { cash: 0, card: 51000 };
+let accountBases = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || 'null') || { ...DEFAULT_ACCOUNT_BASES };
+
+// Which account view is active: 'all' | 'cash' | 'card'
+let activeAccount = 'all';
+
+const BASE_BALANCE = 51000; // kept for backwards compat — equals card default
 let savingsGoal = null;
 let savedBg = null;
 let transactions = [];
@@ -163,7 +173,27 @@ function totalIncome(txs) {
 function totalExpense(txs) {
     return txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
 }
-function balance(txs) { return totalIncome(txs) - totalExpense(txs); }
+function balance(txs) {
+    const base = activeAccount === 'all'
+        ? (accountBases.cash + accountBases.card)
+        : accountBases[activeAccount] || 0;
+    return base + totalIncome(txs) - totalExpense(txs);
+}
+
+// Returns only transactions relevant to the current account view
+function visibleTxs() {
+    if (activeAccount === 'all') return transactions;
+    return transactions.filter(t => (t.account || 'card') === activeAccount);
+}
+
+// Switch account view and re-render everything
+function setActiveAccount(acct) {
+    activeAccount = acct;
+    document.querySelectorAll('.acct-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.account === acct);
+    });
+    refreshAll();
+}
 
 /* ── Navigation ─────────────────────────────── */
 function showPage(id) {
@@ -212,6 +242,9 @@ function openModal(id = null) {
     buildCategorySelect(type, tx ? tx.category : '');
     document.getElementById('txDate').value = tx ? tx.date : todayISO();
     document.getElementById('txNote').value = tx ? tx.note || '' : '';
+    // Restore account — default to the active dashboard account (or 'card')
+    const txAccount = tx ? (tx.account || 'card') : (activeAccount === 'all' ? 'card' : activeAccount);
+    setModalAccount(txAccount);
 
     // delete button
     document.getElementById('deleteBtn').style.display = id ? 'flex' : 'none';
@@ -235,6 +268,12 @@ function setModalType(type) {
 
 function getModalType() {
     return document.querySelector('.type-tab.active')?.dataset.type || 'expense';
+}
+
+function setModalAccount(acct) {
+    document.querySelectorAll('.acct-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.account === acct);
+    });
 }
 
 function buildCategorySelect(type, selected) {
@@ -303,17 +342,18 @@ async function saveTransaction(e) {
     const category = document.getElementById('txCategory').value;
     const date = document.getElementById('txDate').value;
     const note = document.getElementById('txNote').value.trim();
+    const account = document.querySelector('.acct-btn.active')?.dataset.account || 'card';
 
     try {
         if (editId) {
             const docRef = window.fbDoc(window.db, 'transactions', editId);
-            await window.fbUpdateDoc(docRef, { type, amount, category, date, note });
-            syncToSheet("EDIT", { transaction: { id: editId, type, amount, category, date, note } });
+            await window.fbUpdateDoc(docRef, { type, amount, category, date, note, account });
+            syncToSheet("EDIT", { transaction: { id: editId, type, amount, category, date, note, account } });
             showToast('Transaction updated ✓');
         } else {
             const txRef = window.fbCollection(window.db, 'transactions');
-            const newDoc = await window.fbAddDoc(txRef, { type, amount, category, date, note });
-            syncToSheet("ADD", { transaction: { id: newDoc.id, type, amount, category, date, note } });
+            const newDoc = await window.fbAddDoc(txRef, { type, amount, category, date, note, account });
+            syncToSheet("ADD", { transaction: { id: newDoc.id, type, amount, category, date, note, account } });
             showToast('Transaction saved ✓');
         }
         closeModal();
@@ -383,22 +423,28 @@ function initAntigravityAnimations() {
 
 /* ── Sidebar balance ─────────────────────────── */
 function renderSidebarBalance() {
-    document.getElementById('sidebarBalance').textContent = fmt(balance(transactions));
+    document.getElementById('sidebarBalance').textContent = fmt(balance(visibleTxs()));
 }
 
 /* ── Dashboard ──────────────────────────────── */
 function renderDashboard() {
-    const inc = totalIncome(transactions);
-    const exp = totalExpense(transactions);
-    const bal = inc - exp;
+    const txs = visibleTxs();
+    const inc = totalIncome(txs);
+    const exp = totalExpense(txs);
+    const bal = balance(txs);
 
     document.getElementById('totalBalance').textContent = fmt(bal);
     document.getElementById('totalIncome').textContent = fmt(inc);
     document.getElementById('totalExpense').textContent = fmt(exp);
 
+    // Label under balance card
+    const acctLabel = activeAccount === 'all' ? 'Cash + Card' : (activeAccount === 'cash' ? '💵 Cash' : '💳 Card');
+    const sub = document.getElementById('balanceChange');
+    sub.textContent = acctLabel + (txs.length ? ` · ${txs.length} transaction${txs.length !== 1 ? 's' : ''}` : '');
+
     // Current Month Total
     const nowISO = new Date().toISOString().slice(0, 7);
-    const thisMonthTxs = transactions.filter(t => t.date.slice(0, 7) === nowISO);
+    const thisMonthTxs = txs.filter(t => t.date.slice(0, 7) === nowISO);
     const monthInc = totalIncome(thisMonthTxs);
     const monthExp = totalExpense(thisMonthTxs);
     const monthBal = monthInc - monthExp;
@@ -408,9 +454,6 @@ function renderDashboard() {
         monthTotalEl.textContent = fmtSigned(monthBal);
         monthTotalEl.className = 'month-value ' + (monthBal >= 0 ? 'income' : 'expense');
     }
-
-    const sub = document.getElementById('balanceChange');
-    sub.textContent = transactions.length ? `${transactions.length} transaction${transactions.length > 1 ? 's' : ''}` : '';
 
     renderRecent();
     populateYearSelect();
@@ -436,8 +479,8 @@ function renderSavingsGoal() {
     document.getElementById('goalName').textContent = savingsGoal.name;
     document.getElementById('goalAmount').textContent = fmt(savingsGoal.amount);
 
-    const inc = totalIncome(transactions);
-    const exp = totalExpense(transactions);
+    const inc = totalIncome(visibleTxs());
+    const exp = totalExpense(visibleTxs());
     const bal = inc - exp;
 
     let remaining = savingsGoal.amount - bal;
@@ -511,7 +554,7 @@ function clearGoal() {
 
 function renderRecent() {
     const list = document.getElementById('recentList');
-    const recent = [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+    const recent = [...visibleTxs()].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
     list.innerHTML = recent.length ? recent.map(txHTML).join('') : emptyStateHTML('account_balance_wallet', 'No transactions yet.<br>Tap <strong>+</strong> to add one!');
     list.querySelectorAll('.tx-item').forEach(el => el.addEventListener('click', () => openModal(el.dataset.id)));
 }
@@ -528,7 +571,7 @@ function applyFilters() {
     const cat = document.getElementById('filterCategory').value;
     const month = document.getElementById('filterMonth').value;
 
-    let filtered = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
+    let filtered = [...visibleTxs()].sort((a, b) => b.date.localeCompare(a.date));
     if (filterType !== 'all') filtered = filtered.filter(t => t.type === filterType);
     if (cat) filtered = filtered.filter(t => t.category === cat);
     if (month) filtered = filtered.filter(t => t.date.slice(0, 7) === month);
@@ -579,7 +622,7 @@ function applyFilters() {
 function populateCategoryFilter() {
     const sel = document.getElementById('filterCategory');
     const current = sel.value;
-    const allCats = [...new Set(transactions.map(t => t.category))].sort();
+    const allCats = [...new Set(visibleTxs().map(t => t.category))].sort();
     sel.innerHTML = '<option value="">All Categories</option>' +
         allCats.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${CAT_EMOJI[c] || ''} ${c}</option>`).join('');
 }
@@ -588,7 +631,7 @@ function populateMonthFilter() {
     const sel = document.getElementById('filterMonth');
     if (!sel) return;
     const current = sel.value;
-    const months = [...new Set(transactions.map(t => t.date.slice(0, 7)))].sort().reverse();
+    const months = [...new Set(visibleTxs().map(t => t.date.slice(0, 7)))].sort().reverse();
     sel.innerHTML = '<option value="">All Months</option>' +
         months.map(m => {
             const [y, mo] = m.split('-');
@@ -612,7 +655,7 @@ function renderStats() {
 
 function populateStatsMonthSelect() {
     const sel = document.getElementById('statsMonth');
-    const months = [...new Set(transactions.map(t => t.date.slice(0, 7)))].sort().reverse();
+    const months = [...new Set(visibleTxs().map(t => t.date.slice(0, 7)))].sort().reverse();
     const current = sel.value || months[0] || '';
     sel.innerHTML = '<option value="">All Time</option>' +
         months.map(m => {
@@ -624,7 +667,8 @@ function populateStatsMonthSelect() {
 
 function getStatsTxs() {
     const month = document.getElementById('statsMonth')?.value || '';
-    return month ? transactions.filter(t => t.date.slice(0, 7) === month) : transactions;
+    const base = visibleTxs();
+    return month ? base.filter(t => t.date.slice(0, 7) === month) : base;
 }
 
 function renderDonutChart(type, canvasId, totalId, legendId, instanceVarName) {
@@ -731,7 +775,7 @@ function renderStatsGrid() {
 /* ── Bar Chart ──────────────────────────────── */
 function populateYearSelect() {
     const sel = document.getElementById('chartYear');
-    const years = [...new Set(transactions.map(t => t.date.slice(0, 4)))].sort().reverse();
+    const years = [...new Set(visibleTxs().map(t => t.date.slice(0, 4)))].sort().reverse();
     if (!years.length) years.push(new Date().getFullYear().toString());
     const current = sel.value || years[0];
     sel.innerHTML = years.map(y => `<option ${y === current ? 'selected' : ''}>${y}</option>`).join('');
@@ -742,7 +786,7 @@ function renderBarChart() {
     const year = document.getElementById('chartYear').value || new Date().getFullYear().toString();
     const incomes = Array(12).fill(0);
     const expenses = Array(12).fill(0);
-    transactions
+    visibleTxs()
         .filter(t => t.date.startsWith(year))
         .forEach(t => {
             const mo = parseInt(t.date.slice(5, 7)) - 1;
@@ -845,11 +889,15 @@ function loadChartJS(cb) {
 /* ── Helpers ─────────────────────────────────── */
 function txHTML(t) {
     const emoji = CAT_EMOJI[t.category] || '💳';
+    const acct = t.account || 'card';
+    const acctBadge = activeAccount === 'all'
+        ? `<span class="tx-acct-badge tx-acct-${acct}">${acct === 'cash' ? '💵' : '💳'}</span>`
+        : '';
     return `
     <div class="tx-item" data-id="${t.id}" data-type="${t.type}">
       <div class="tx-icon ${t.type}">${emoji}</div>
       <div class="tx-info">
-        <div class="tx-category">${t.category}</div>
+        <div class="tx-category">${t.category} ${acctBadge}</div>
         <div class="tx-note">${t.note || dateLabel(t.date)}</div>
       </div>
       <div style="text-align: right;">
@@ -1330,45 +1378,76 @@ function initImport() {
 
 /* ── Custom Background ───────────────────── */
 function applyBackground(base64) {
+    const remBtn = document.getElementById('bgRemoveBtn');
     if (base64) {
-        document.body.style.backgroundImage = `url(${base64})`;
-        document.body.style.backgroundSize = 'cover';
-        document.body.style.backgroundPosition = 'center';
-        document.body.style.backgroundAttachment = 'fixed';
-        const remBtn = document.getElementById('bgRemoveBtn');
+        // Use a pseudo-element approach via CSS custom property for crisp rendering
+        document.documentElement.style.setProperty('--custom-bg', `url(${base64})`);
+        document.body.classList.add('has-custom-bg');
         if (remBtn) remBtn.style.display = 'flex';
     } else {
-        document.body.style.backgroundImage = '';
-        const remBtn = document.getElementById('bgRemoveBtn');
+        document.documentElement.style.removeProperty('--custom-bg');
+        document.body.classList.remove('has-custom-bg');
         if (remBtn) remBtn.style.display = 'none';
     }
 }
 
 function handleBgUpload(file) {
     if (!file) return;
+
+    // Target dimensions = actual screen pixels for pixel-perfect fit
+    const screenW = window.screen.width  * (window.devicePixelRatio || 1);
+    const screenH = window.screen.height * (window.devicePixelRatio || 1);
+    // Cap at 3840×2160 (4K) to stay within localStorage limits
+    const MAX_W = Math.min(screenW, 3840);
+    const MAX_H = Math.min(screenH, 2160);
+
     const reader = new FileReader();
     reader.onload = function (e) {
         const img = new Image();
         img.onload = function () {
+            const srcW = img.naturalWidth;
+            const srcH = img.naturalHeight;
+
+            // Scale DOWN only — never upscale a small image
+            const scale = Math.min(1, MAX_W / srcW, MAX_H / srcH);
+            const outW  = Math.round(srcW * scale);
+            const outH  = Math.round(srcH * scale);
+
             const canvas = document.createElement('canvas');
-            const MAX_W = 1920, MAX_H = 1080;
-            let w = img.width, h = img.height;
-            if (w > h && w > MAX_W) { h *= MAX_W / w; w = MAX_W; }
-            else if (h > MAX_H) { w *= MAX_H / h; h = MAX_H; }
-            canvas.width = Math.round(w);
-            canvas.height = Math.round(h);
+            canvas.width  = outW;
+            canvas.height = outH;
+
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+            // Enable smooth high-quality interpolation
+            ctx.imageSmoothingEnabled  = true;
+            ctx.imageSmoothingQuality  = 'high';
+            ctx.drawImage(img, 0, 0, outW, outH);
+
+            // Use WebP when supported (smaller + sharper), fallback to JPEG at high quality
+            const supportsWebP = canvas.toDataURL('image/webp').startsWith('data:image/webp');
+            const dataUrl = supportsWebP
+                ? canvas.toDataURL('image/webp', 0.90)
+                : canvas.toDataURL('image/jpeg', 0.88);
+
             try {
                 localStorage.setItem(BG_KEY, dataUrl);
                 savedBg = dataUrl;
                 applyBackground(dataUrl);
                 showToast('Background updated ✓');
             } catch (err) {
-                showToast('Image too large. Try a smaller one.');
+                // If storage is full try a lower quality pass before giving up
+                try {
+                    const fallback = canvas.toDataURL('image/jpeg', 0.72);
+                    localStorage.setItem(BG_KEY, fallback);
+                    savedBg = fallback;
+                    applyBackground(fallback);
+                    showToast('Background updated ✓');
+                } catch (_) {
+                    showToast('Image too large for storage. Try a smaller file.');
+                }
             }
         };
+        img.onerror = () => showToast('Could not read image file.');
         img.src = e.target.result;
     };
     reader.readAsDataURL(file);
@@ -1459,7 +1538,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initCustomCategories() {
     const dropdown = document.getElementById('txCategoryDropdown');
-    const hidden = document.getElementById('txCategory');
     const backdrop = document.getElementById('customCatBackdrop');
     const modal = document.getElementById('customCatModal');
     const closeBtn = document.getElementById('closeCustomCatBtn');

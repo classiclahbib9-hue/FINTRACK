@@ -141,6 +141,19 @@
 
       <!-- DASHBOARD PAGE -->
       <section class="page active" id="page-dashboard">
+        <!-- Account Switcher -->
+        <div class="acct-switcher">
+          <button class="acct-tab active" data-account="all" onclick="setActiveAccount('all')">
+            <span class="material-symbols-rounded">account_balance_wallet</span> All Accounts
+          </button>
+          <button class="acct-tab" data-account="cash" onclick="setActiveAccount('cash')">
+            💵 Cash
+          </button>
+          <button class="acct-tab" data-account="card" onclick="setActiveAccount('card')">
+            💳 Card
+          </button>
+        </div>
+
         <div class="summary-cards">
           <div class="card card--balance">
             <div class="card-label">Total Balance</div>
@@ -321,6 +334,16 @@
         </button>
         <button class="type-tab" data-type="income" id="tabIncome">
           <span class="material-symbols-rounded">trending_up</span> Income
+        </button>
+      </div>
+
+      <!-- Account picker -->
+      <div class="acct-picker">
+        <button class="acct-btn" data-account="cash" type="button" onclick="setModalAccount('cash')">
+          💵 Cash
+        </button>
+        <button class="acct-btn active" data-account="card" type="button" onclick="setModalAccount('card')">
+          💳 Card
         </button>
       </div>
 
