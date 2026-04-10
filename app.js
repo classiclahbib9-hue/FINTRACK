@@ -184,7 +184,7 @@ function visibleTxs() {
     const acct = window.activeAccount || 'all';
     const txs = window.transactions || [];
     if (acct === 'all') return txs;
-    return txs.filter(t => (t.account || 'card') === acct);
+    return txs.filter(t => (t.account || 'cash') === acct);
 }
 
 // Switch account view and re-render everything
@@ -249,7 +249,7 @@ function openModal(id = null) {
     document.getElementById('txDate').value = tx ? tx.date : todayISO();
     document.getElementById('txNote').value = tx ? tx.note || '' : '';
     // Restore account — default to the active dashboard account (or 'card')
-    const txAccount = tx ? (tx.account || 'card') : (activeAccount === 'all' ? 'card' : activeAccount);
+    const txAccount = tx ? (tx.account || 'cash') : (window.activeAccount === 'all' ? 'cash' : window.activeAccount);
     setModalAccount(txAccount);
 
     // delete button
@@ -348,7 +348,7 @@ async function saveTransaction(e) {
     const category = document.getElementById('txCategory').value;
     const date = document.getElementById('txDate').value;
     const note = document.getElementById('txNote').value.trim();
-    const account = document.querySelector('.acct-btn.active')?.dataset.account || 'card';
+    const account = document.querySelector('.acct-btn.active')?.dataset.account || 'cash';
 
     try {
         if (editId) {
@@ -444,7 +444,7 @@ function renderDashboard() {
     document.getElementById('totalExpense').textContent = fmt(exp);
 
     // Label under balance card
-    const acctLabel = activeAccount === 'all' ? 'Cash + Card' : (activeAccount === 'cash' ? '💵 Cash' : '💳 Card');
+    const acctLabel = window.activeAccount === 'all' ? 'Cash + Card' : (window.activeAccount === 'cash' ? '💵 Cash' : '💳 Card');
     const sub = document.getElementById('balanceChange');
     sub.textContent = acctLabel + (txs.length ? ` · ${txs.length} transaction${txs.length !== 1 ? 's' : ''}` : '');
 
