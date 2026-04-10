@@ -69,13 +69,13 @@ const BG_KEY   = 'fintrack_bg';
 const ACCOUNTS_KEY = 'fintrack_account_bases';
 
 // Starting balance per account — persisted so user can edit later
-const DEFAULT_ACCOUNT_BASES = { cash: 0, card: 51000 };
+const DEFAULT_ACCOUNT_BASES = { cash: 51000, card: 29475.94 };
 let accountBases = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || 'null') || { ...DEFAULT_ACCOUNT_BASES };
 
 window.activeAccount = 'all';
 window.transactions = [];
 
-const BASE_BALANCE = 51000; 
+const BASE_BALANCE = 80475.94; // cash (51000) + card (29475.94) 
 let savingsGoal = null;
 let savedBg = null;
 let editId = null;
