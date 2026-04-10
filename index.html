@@ -650,10 +650,8 @@
         // ── PERSISTENCE: Instant Local Mirror ── (Ensures data is NEVER lost)
         localStorage.setItem('fintrack_cache_transactions', JSON.stringify(window._transactions));
 
-        // Sync into app.js transactions array and trigger a debounced render
-        if (typeof transactions !== 'undefined') {
-          transactions = window._transactions;
-        }
+        // Sync into app.js global transactions array and trigger a debounced render
+        window.transactions = window._transactions;
 
         if (typeof scheduleRefresh === 'function') scheduleRefresh();
 

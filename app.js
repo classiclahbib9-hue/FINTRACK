@@ -72,13 +72,12 @@ const ACCOUNTS_KEY = 'fintrack_account_bases';
 const DEFAULT_ACCOUNT_BASES = { cash: 0, card: 51000 };
 let accountBases = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || 'null') || { ...DEFAULT_ACCOUNT_BASES };
 
-// Which account view is active: 'all' | 'cash' | 'card'
-let activeAccount = 'all';
+window.activeAccount = 'all';
+window.transactions = [];
 
-const BASE_BALANCE = 51000; // kept for backwards compat — equals card default
+const BASE_BALANCE = 51000; 
 let savingsGoal = null;
 let savedBg = null;
-let transactions = [];
 let editId = null;
 let activePage = 'dashboard';
 let filterType = 'all';
@@ -182,16 +181,23 @@ function balance(txs) {
 
 // Returns only transactions relevant to the current account view
 function visibleTxs() {
-    if (activeAccount === 'all') return transactions;
-    return transactions.filter(t => (t.account || 'card') === activeAccount);
+    const acct = window.activeAccount || 'all';
+    const txs = window.transactions || [];
+    if (acct === 'all') return txs;
+    return txs.filter(t => (t.account || 'card') === acct);
 }
 
 // Switch account view and re-render everything
 function setActiveAccount(acct) {
-    activeAccount = acct;
+    console.log('Switching to account:', acct);
+    window.activeAccount = acct;
+    
+    // Update UI tabs
     document.querySelectorAll('.acct-tab').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.account === acct);
     });
+    
+    // Refresh the current page view
     refreshAll();
 }
 
