@@ -1497,6 +1497,26 @@ function handleBgUpload(file) {
     reader.readAsDataURL(file);
 }
 
+/* ── Theme (Light / Dark) ────────────────────── */
+function initTheme() {
+    const btn   = document.getElementById('themeToggleBtn');
+    const icon  = document.getElementById('themeIcon');
+    const label = document.getElementById('themeLabel');
+    const isLight = () => document.body.classList.contains('light');
+
+    function applyTheme(light) {
+        document.body.classList.toggle('light', light);
+        icon.textContent  = light ? 'dark_mode'  : 'light_mode';
+        label.textContent = light ? 'Dark Mode'  : 'Light Mode';
+        localStorage.setItem('fintrack_theme', light ? 'light' : 'dark');
+    }
+
+    // Restore saved preference
+    applyTheme(localStorage.getItem('fintrack_theme') === 'light');
+
+    btn.addEventListener('click', () => { applyTheme(!isLight()); closeSidebar(); });
+}
+
 function initBackground() {
     const bgBtn = document.getElementById('bgNavBtn');
     const bgInput = document.getElementById('bgInput');
@@ -1569,6 +1589,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initImport();
     initSavingsGoal();
     initBackground();
+    initTheme();
     initPasswordChange();
     initCustomCategories();
 
