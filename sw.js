@@ -1,4 +1,4 @@
-const CACHE = 'fintrack-v26';
+const CACHE = 'fintrack-v27';
 const STATIC = [
     './',
     './index.html',
