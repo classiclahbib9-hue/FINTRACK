@@ -85,6 +85,10 @@
     </nav>
     <div class="sidebar-import">
       <div class="sidebar-section-label">Tools</div>
+      <button class="import-nav-btn" id="addLoanSidebarBtn">
+        <span class="material-symbols-rounded">handshake</span>
+        <span>Lend Money</span>
+      </button>
       <button class="import-nav-btn" id="importNavBtn">
         <span class="material-symbols-rounded">upload_file</span>
         <span>Import Excel / CSV</span>
@@ -544,7 +548,7 @@
   </div>
 
   <script>
-    if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator && location.hostname !== 'localhost') {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js');
       });

@@ -1029,6 +1029,7 @@ function init() {
 
     // Loan modal
     document.getElementById('addLoanBtn').addEventListener('click', openLoanModal);
+    document.getElementById('addLoanSidebarBtn').addEventListener('click', openLoanModal);
     document.getElementById('closeLoanBtn').addEventListener('click', closeLoanModal);
     document.getElementById('loanBackdrop').addEventListener('click', e => {
         if (e.target === e.currentTarget) closeLoanModal();
