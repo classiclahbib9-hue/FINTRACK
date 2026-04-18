@@ -103,6 +103,11 @@
       </button>
       <input type="file" id="bgInput" accept="image/*" style="display:none;" />
 
+      <button class="import-nav-btn" id="transferNavBtn">
+        <span class="material-symbols-rounded">swap_horiz</span>
+        <span>Transfer Funds</span>
+      </button>
+
       <div class="sidebar-section-label" style="margin-top: 6px;">Account</div>
       <button class="import-nav-btn" id="changePasswordBtn">
         <span class="material-symbols-rounded">password</span>
@@ -205,6 +210,20 @@
           <div class="empty-state" id="noGoalWidget">
             <span class="material-symbols-rounded">flag</span>
             <p>No savings goal set.<br>Set a target to track your progress!</p>
+          </div>
+        </div>
+
+        <!-- Money Lent -->
+        <div class="section-block" id="loansSection">
+          <div class="section-header">
+            <h2 class="section-title">💸 Money Lent</h2>
+            <button class="link-btn" id="addLoanBtn">+ Lend</button>
+          </div>
+          <div id="loansList">
+            <div class="empty-state" id="noLoansState">
+              <span class="material-symbols-rounded">handshake</span>
+              <p>No active loans.<br>Use + Lend to track money you've lent.</p>
+            </div>
           </div>
         </div>
 
@@ -567,6 +586,75 @@
           </div>
           <button class="btn btn--primary" id="savePasswordBtn" style="width: 100%;">Save New Password</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Lend Money -->
+  <div class="modal-backdrop" id="loanBackdrop">
+    <div class="modal" id="loanModal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h2 class="modal-title">Lend Money</h2>
+        <button class="modal-close" id="closeLoanBtn" aria-label="Close">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+      <div class="modal-body" style="padding: 24px;">
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="loanPerson">Person</label>
+          <input type="text" id="loanPerson" class="form-input" placeholder="e.g. Ahmed" />
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="loanAmount">Amount</label>
+          <input type="number" id="loanAmount" class="form-input" placeholder="0.00" min="0.01" step="0.01" />
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">From Account</label>
+          <div style="display:flex;gap:10px;">
+            <button class="type-tab active" id="loanFromCash" data-acct="cash">💵 Cash</button>
+            <button class="type-tab" id="loanFromCard" data-acct="card">💳 Card</button>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="loanDate">Date</label>
+          <input type="date" id="loanDate" class="form-input" />
+        </div>
+        <div class="form-group" style="margin-bottom:24px;">
+          <label class="form-label" for="loanNote">Note (optional)</label>
+          <input type="text" id="loanNote" class="form-input" placeholder="What for?" />
+        </div>
+        <button class="btn btn--primary" id="confirmLoanBtn" style="width:100%;">Confirm Lend</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Transfer Between Accounts -->
+  <div class="modal-backdrop" id="transferBackdrop">
+    <div class="modal" id="transferModal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h2 class="modal-title">Transfer Money</h2>
+        <button class="modal-close" id="closeTransferBtn" aria-label="Close">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+      <div class="modal-body" style="padding: 24px;">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label">From</label>
+          <div style="display:flex;gap:10px;">
+            <button class="type-tab active" id="transferFromCash" data-from="cash">💵 Cash</button>
+            <button class="type-tab" id="transferFromCard" data-from="card">💳 Card</button>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:22px;margin:8px 0;color:var(--accent);">↓</div>
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label class="form-label">To</label>
+          <div id="transferToLabel" style="font-weight:600;font-size:1rem;opacity:.8;">💳 Card</div>
+        </div>
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label class="form-label" for="transferAmount">Amount</label>
+          <input type="number" id="transferAmount" class="form-input" placeholder="0.00" min="0.01" step="0.01" />
+        </div>
+        <button class="btn btn--primary" id="confirmTransferBtn" style="width:100%;">Transfer</button>
       </div>
     </div>
   </div>

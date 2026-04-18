@@ -1026,10 +1026,166 @@ function init() {
         renderDonutChart();
         renderStatsGrid();
     });
+
+    // Loan modal
+    document.getElementById('addLoanBtn').addEventListener('click', openLoanModal);
+    document.getElementById('closeLoanBtn').addEventListener('click', closeLoanModal);
+    document.getElementById('loanBackdrop').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeLoanModal();
+    });
+    document.getElementById('loanFromCash').addEventListener('click', () => {
+        _loanFromAcct = 'cash';
+        document.getElementById('loanFromCash').classList.add('active');
+        document.getElementById('loanFromCard').classList.remove('active');
+    });
+    document.getElementById('loanFromCard').addEventListener('click', () => {
+        _loanFromAcct = 'card';
+        document.getElementById('loanFromCard').classList.add('active');
+        document.getElementById('loanFromCash').classList.remove('active');
+    });
+    document.getElementById('confirmLoanBtn').addEventListener('click', confirmLoan);
+    renderLoans();
+
+    // Transfer modal
+    document.getElementById('transferNavBtn').addEventListener('click', openTransferModal);
+    document.getElementById('closeTransferBtn').addEventListener('click', closeTransferModal);
+    document.getElementById('transferBackdrop').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeTransferModal();
+    });
+    document.getElementById('transferFromCash').addEventListener('click', () => setTransferFrom('cash'));
+    document.getElementById('transferFromCard').addEventListener('click', () => setTransferFrom('card'));
+    document.getElementById('confirmTransferBtn').addEventListener('click', doTransfer);
 }
 
 document.addEventListener('DOMContentLoaded', init);
 
+/* ═══════════════════════════════════════════════
+   TRANSFER BETWEEN ACCOUNTS
+═══════════════════════════════════════════════ */
+let _transferFrom = 'cash';
+
+function openTransferModal() {
+    _transferFrom = 'cash';
+    document.getElementById('transferFromCash').classList.add('active');
+    document.getElementById('transferFromCard').classList.remove('active');
+    document.getElementById('transferToLabel').textContent = '💳 Card';
+    document.getElementById('transferAmount').value = '';
+    document.getElementById('transferBackdrop').classList.add('show');
+    closeSidebar();
+}
+
+function closeTransferModal() {
+    document.getElementById('transferBackdrop').classList.remove('show');
+}
+
+function setTransferFrom(from) {
+    _transferFrom = from;
+    document.getElementById('transferFromCash').classList.toggle('active', from === 'cash');
+    document.getElementById('transferFromCard').classList.toggle('active', from === 'card');
+    document.getElementById('transferToLabel').textContent = from === 'cash' ? '💳 Card' : '💵 Cash';
+}
+
+function doTransfer() {
+    const amount = parseFloat(document.getElementById('transferAmount').value);
+    if (!amount || amount <= 0) { showToast('Enter a valid amount.'); return; }
+    const from = _transferFrom;
+    const to = from === 'cash' ? 'card' : 'cash';
+    if (accountBases[from] < amount) { showToast('Insufficient balance.'); return; }
+    accountBases[from] -= amount;
+    accountBases[to] += amount;
+    saveAccountBases();
+    closeTransferModal();
+    scheduleRefresh();
+    showToast(`Transferred ${fmt(amount)} from ${from} to ${to}.`);
+}
+
+
+/* ═══════════════════════════════════════════════
+   LOANS — MONEY LENT
+═══════════════════════════════════════════════ */
+const LOANS_KEY = 'fintrack_loans';
+let loans = JSON.parse(localStorage.getItem(LOANS_KEY) || '[]');
+
+function saveLoans() {
+    localStorage.setItem(LOANS_KEY, JSON.stringify(loans));
+}
+
+let _loanFromAcct = 'cash';
+
+function openLoanModal() {
+    _loanFromAcct = 'cash';
+    document.getElementById('loanFromCash').classList.add('active');
+    document.getElementById('loanFromCard').classList.remove('active');
+    document.getElementById('loanPerson').value = '';
+    document.getElementById('loanAmount').value = '';
+    document.getElementById('loanDate').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('loanNote').value = '';
+    document.getElementById('loanBackdrop').classList.add('show');
+}
+
+function closeLoanModal() {
+    document.getElementById('loanBackdrop').classList.remove('show');
+}
+
+function confirmLoan() {
+    const person = document.getElementById('loanPerson').value.trim();
+    const amount = parseFloat(document.getElementById('loanAmount').value);
+    const date   = document.getElementById('loanDate').value;
+    const note   = document.getElementById('loanNote').value.trim();
+
+    if (!person) { showToast('Enter a person name.'); return; }
+    if (!amount || amount <= 0) { showToast('Enter a valid amount.'); return; }
+    if (accountBases[_loanFromAcct] < amount) { showToast('Insufficient balance.'); return; }
+
+    accountBases[_loanFromAcct] -= amount;
+    saveAccountBases();
+
+    loans.push({ id: Date.now().toString(), person, amount, account: _loanFromAcct, date, note, repaid: false });
+    saveLoans();
+
+    closeLoanModal();
+    renderLoans();
+    scheduleRefresh();
+    showToast(`Lent ${fmt(amount)} to ${person}.`);
+}
+
+function repayLoan(id) {
+    const loan = loans.find(l => l.id === id);
+    if (!loan) return;
+    accountBases[loan.account] += loan.amount;
+    saveAccountBases();
+    loans = loans.filter(l => l.id !== id);
+    saveLoans();
+    renderLoans();
+    scheduleRefresh();
+    showToast(`${loan.person} repaid ${fmt(loan.amount)} — added back to ${loan.account}.`);
+}
+
+function renderLoans() {
+    const list = document.getElementById('loansList');
+    const empty = document.getElementById('noLoansState');
+    const active = loans.filter(l => !l.repaid);
+
+    if (!active.length) {
+        list.innerHTML = '';
+        list.appendChild(empty);
+        empty.style.display = '';
+        return;
+    }
+
+    empty.style.display = 'none';
+    list.innerHTML = active.map(l => `
+        <div class="tx-item" style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
+          <div style="font-size:1.5rem;">🤝</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;">${l.person}</div>
+            <div style="font-size:.8rem;opacity:.6;">${l.date}${l.note ? ' · ' + l.note : ''} · ${l.account}</div>
+          </div>
+          <div style="font-weight:700;color:var(--accent);white-space:nowrap;">${fmt(l.amount)}</div>
+          <button onclick="repayLoan('${l.id}')" class="link-btn" style="white-space:nowrap;color:var(--green);">✓ Repaid</button>
+        </div>
+    `).join('');
+}
 
 /* ═══════════════════════════════════════════════
    EXCEL / CSV IMPORT FEATURE
