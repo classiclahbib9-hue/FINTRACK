@@ -8,7 +8,10 @@
             "*.xlsx",
             "*.py",
             "*.csv",
-            "*.md"
+            "*.md",
+            "*.bat",
+            "*.exe",
+            "*.sh"
         ],
         "rewrites": [
             {
