@@ -52,7 +52,7 @@ Personal finance tracker PWA. Vanilla JS + Firebase Firestore + anonymous auth. 
 ## Architecture Notes
 - **No build step** — edit files and reload
 - **120ms debounce** on `refreshAll()` to batch updates
-- **Active page** drives rendering: Dashboard / Transactions / Stats
+- **Active page** drives rendering: Dashboard / Transactions / Stats / Delpos
 - **Charts destroy/recreate** on each data change (no diffing)
 - **Balance is stored** in `accountBases`, not computed from transactions
 - **Google Sheets webhook** syncs silently in the background

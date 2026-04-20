@@ -78,6 +78,10 @@
         <span class="material-symbols-rounded">receipt_long</span>
         <span>Transactions</span>
       </a>
+      <a href="#" class="nav-item" data-page="loans" id="nav-loans">
+        <span class="material-symbols-rounded">handshake</span>
+        <span>Loans</span>
+      </a>
       <a href="#" class="nav-item" data-page="stats" id="nav-stats">
         <span class="material-symbols-rounded">bar_chart</span>
         <span>Statistics</span>
@@ -292,6 +296,17 @@
       </section>
 
       <!-- STATS PAGE -->
+      <!-- LOANS PAGE -->
+      <section class="page" id="page-loans">
+        <div class="section-block">
+          <div class="section-header">
+            <h2 class="section-title">💸 Money Lent</h2>
+            <button class="link-btn" id="addLoanPageBtn">+ Lend</button>
+          </div>
+          <div id="loansPageList"></div>
+        </div>
+      </section>
+
       <section class="page" id="page-stats">
         <div class="section-block">
           <div class="section-header">
@@ -335,6 +350,7 @@
           <div class="stats-grid" id="statsGrid"></div>
         </div>
       </section>
+
 
     </div><!-- /pages -->
 
@@ -767,17 +783,21 @@
 
     // ── Export Utility ──
     window.exportDataToJSON = () => {
-       if (!window._transactions || window._transactions.length === 0) {
-           if (typeof showToast === 'function') showToast('No data to export');
-           return;
-       }
-       const blob = new Blob([JSON.stringify(window._transactions, null, 2)], { type: 'application/json' });
+       const backup = {
+           transactions: window._transactions || [],
+           accountBases: JSON.parse(localStorage.getItem('fintrack_account_bases_v3') || '{}'),
+           loans: JSON.parse(localStorage.getItem('fintrack_loans') || '[]'),
+           savingsGoal: JSON.parse(localStorage.getItem('fintrack_savings_goal') || 'null'),
+           exportedAt: new Date().toISOString()
+       };
+       const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
        const url = URL.createObjectURL(blob);
        const a = document.createElement('a');
        a.href = url;
        a.download = `fintrack_backup_${new Date().toISOString().slice(0, 10)}.json`;
        a.click();
        URL.revokeObjectURL(url);
+       if (typeof showToast === 'function') showToast('Backup exported ✓');
     };
   </script>
 

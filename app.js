@@ -104,8 +104,10 @@ function scheduleRefresh() {
 /* ── Boot ───────────────────────────────────── */
 function loadData() {
     // Load local settings
-    try { savingsGoal = JSON.parse(localStorage.getItem(GOAL_KEY)) || null; }
-    catch { savingsGoal = null; }
+    try {
+        const _g = localStorage.getItem(GOAL_KEY);
+        savingsGoal = _g ? JSON.parse(_g) : null;
+    } catch { savingsGoal = null; }
     try { savedBg = localStorage.getItem(BG_KEY) || null; }
     catch { savedBg = null; }
 
@@ -225,7 +227,7 @@ function showPage(id) {
     document.getElementById('page-' + id).classList.add('active');
     const nav = document.getElementById('nav-' + id);
     if (nav) nav.classList.add('active');
-    const titles = { dashboard: 'Dashboard', transactions: 'Transactions', stats: 'Statistics' };
+    const titles = { dashboard: 'Dashboard', transactions: 'Transactions', loans: 'Loans', stats: 'Statistics' };
     document.getElementById('pageTitle').textContent = titles[id] || id;
     closeSidebar();
     if (id === 'dashboard') renderDashboard();
@@ -368,27 +370,26 @@ async function saveTransaction(e) {
 
     try {
         if (editId) {
-            // Reverse the old transaction's effect before applying the new one
+            const docRef = window.fbDoc(window.db, 'transactions', editId);
+            await window.fbUpdateDoc(docRef, { type, amount, category, date, note, account });
+            // Only touch balance AFTER cloud confirms
             const oldTx = transactions.find(t => t.id === editId);
             if (oldTx) applyTxEffect(oldTx.type, oldTx.amount, oldTx.account || 'cash', true);
             applyTxEffect(type, amount, account);
-
-            const docRef = window.fbDoc(window.db, 'transactions', editId);
-            await window.fbUpdateDoc(docRef, { type, amount, category, date, note, account });
             syncToSheet("EDIT", { transaction: { id: editId, type, amount, category, date, note, account } });
             showToast('Transaction updated ✓');
         } else {
-            applyTxEffect(type, amount, account);
-
             const txRef = window.fbCollection(window.db, 'transactions');
             const newDoc = await window.fbAddDoc(txRef, { type, amount, category, date, note, account });
+            // Only touch balance AFTER cloud confirms
+            applyTxEffect(type, amount, account);
             syncToSheet("ADD", { transaction: { id: newDoc.id, type, amount, category, date, note, account } });
             showToast('Transaction saved ✓');
         }
         closeModal();
     } catch (err) {
         console.error("Error saving doc:", err);
-        showToast('Error saving to cloud');
+        showToast('Error saving to cloud — check connection');
     }
 }
 
@@ -396,17 +397,17 @@ async function deleteTransaction() {
     if (!editId) return;
     try {
         const tx = transactions.find(t => t.id === editId);
-        if (tx) applyTxEffect(tx.type, tx.amount, tx.account || 'cash', true);
-
         const deletedId = editId;
         const docRef = window.fbDoc(window.db, 'transactions', editId);
         await window.fbDeleteDoc(docRef);
+        // Only reverse balance AFTER cloud confirms deletion
+        if (tx) applyTxEffect(tx.type, tx.amount, tx.account || 'cash', true);
         syncToSheet("DELETE", { transaction: { id: deletedId } });
         closeModal();
         showToast('Deleted');
     } catch (err) {
         console.error("Error deleting doc:", err);
-        showToast('Error deleting from cloud');
+        showToast('Error deleting from cloud — check connection');
     }
 }
 
@@ -569,7 +570,7 @@ function saveGoal(e) {
     }
 
     savingsGoal = { name, amount };
-    saveData();
+    localStorage.setItem(GOAL_KEY, JSON.stringify(savingsGoal));
     closeGoalModal();
     renderSavingsGoal();
     showToast('Goal saved ✓');
@@ -577,7 +578,7 @@ function saveGoal(e) {
 
 function clearGoal() {
     savingsGoal = null;
-    saveData();
+    localStorage.removeItem(GOAL_KEY);
     closeGoalModal();
     renderSavingsGoal();
     showToast('Goal cleared');
@@ -606,7 +607,12 @@ function applyFilters() {
     if (filterType !== 'all') filtered = filtered.filter(t => t.type === filterType);
     if (filterAccount !== 'all') filtered = filtered.filter(t => (t.account || 'cash') === filterAccount);
     if (cat) filtered = filtered.filter(t => t.category === cat);
-    if (month) filtered = filtered.filter(t => t.date.slice(0, 7) === month);
+    if (month === 'today') {
+        const today = new Date().toISOString().slice(0, 10);
+        filtered = filtered.filter(t => t.date === today);
+    } else if (month) {
+        filtered = filtered.filter(t => t.date.slice(0, 7) === month);
+    }
     if (search) filtered = filtered.filter(t =>
         t.category.toLowerCase().includes(search) ||
         (t.note || '').toLowerCase().includes(search) ||
@@ -663,14 +669,16 @@ function populateCategoryFilter() {
 function populateMonthFilter() {
     const sel = document.getElementById('filterMonth');
     if (!sel) return;
-    const current = sel.value;
+    const today = new Date().toISOString().slice(0, 10);
+    const current = sel.value !== undefined ? sel.value : today;
     const months = [...new Set(visibleTxs().map(t => t.date.slice(0, 7)))].sort().reverse();
-    sel.innerHTML = '<option value="">All Months</option>' +
+    sel.innerHTML = `<option value="">All Time</option><option value="today" ${current === 'today' ? 'selected' : ''}>Today</option>` +
         months.map(m => {
             const [y, mo] = m.split('-');
             const label = MONTH_NAMES[parseInt(mo) - 1] + ' ' + y;
             return `<option value="${m}" ${m === current ? 'selected' : ''}>${label}</option>`;
         }).join('');
+    if (!sel.value) sel.value = 'today';
 }
 
 function loadMoreTransactions() {
@@ -1030,6 +1038,7 @@ function init() {
     // Loan modal
     document.getElementById('addLoanBtn').addEventListener('click', openLoanModal);
     document.getElementById('addLoanSidebarBtn').addEventListener('click', openLoanModal);
+    document.getElementById('addLoanPageBtn').addEventListener('click', openLoanModal);
     document.getElementById('closeLoanBtn').addEventListener('click', closeLoanModal);
     document.getElementById('loanBackdrop').addEventListener('click', e => {
         if (e.target === e.currentTarget) closeLoanModal();
@@ -1138,11 +1147,14 @@ function confirmLoan() {
     if (!amount || amount <= 0) { showToast('Enter a valid amount.'); return; }
     if (accountBases[_loanFromAcct] < amount) { showToast('Insufficient balance.'); return; }
 
+    const finalDate = date || new Date().toISOString().slice(0, 10);
+
     accountBases[_loanFromAcct] -= amount;
     saveAccountBases();
 
-    loans.push({ id: Date.now().toString(), person, amount, account: _loanFromAcct, date, note, repaid: false });
+    loans.push({ id: Date.now().toString(), person, amount, account: _loanFromAcct, date: finalDate, note, repaid: false });
     saveLoans();
+    loans = JSON.parse(localStorage.getItem(LOANS_KEY) || '[]'); // re-read to confirm write
 
     closeLoanModal();
     renderLoans();
@@ -1157,25 +1169,14 @@ function repayLoan(id) {
     saveAccountBases();
     loans = loans.filter(l => l.id !== id);
     saveLoans();
+    loans = JSON.parse(localStorage.getItem(LOANS_KEY) || '[]');
     renderLoans();
     scheduleRefresh();
     showToast(`${loan.person} repaid ${fmt(loan.amount)} — added back to ${loan.account}.`);
 }
 
-function renderLoans() {
-    const list = document.getElementById('loansList');
-    const empty = document.getElementById('noLoansState');
-    const active = loans.filter(l => !l.repaid);
-
-    if (!active.length) {
-        list.innerHTML = '';
-        list.appendChild(empty);
-        empty.style.display = '';
-        return;
-    }
-
-    empty.style.display = 'none';
-    list.innerHTML = active.map(l => `
+function loanRowHTML(l) {
+    return `
         <div class="tx-item" style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
           <div style="font-size:1.5rem;">🤝</div>
           <div style="flex:1;min-width:0;">
@@ -1184,8 +1185,41 @@ function renderLoans() {
           </div>
           <div style="font-weight:700;color:var(--accent);white-space:nowrap;">${fmt(l.amount)}</div>
           <button onclick="repayLoan('${l.id}')" class="link-btn" style="white-space:nowrap;color:var(--green);">✓ Repaid</button>
-        </div>
-    `).join('');
+        </div>`;
+}
+
+function renderLoans() {
+    const active = loans.filter(l => !l.repaid);
+
+    // Dashboard widget
+    const list = document.getElementById('loansList');
+    const empty = document.getElementById('noLoansState');
+    if (list) {
+        if (!active.length) {
+            list.innerHTML = '';
+            list.appendChild(empty);
+            empty.style.display = '';
+        } else {
+            empty.style.display = 'none';
+            list.innerHTML = active.map(loanRowHTML).join('');
+        }
+    }
+
+    // Full loans page
+    const pageList = document.getElementById('loansPageList');
+    if (pageList) {
+        if (!active.length) {
+            pageList.innerHTML = `<div class="empty-state"><span class="material-symbols-rounded">handshake</span><p>No active loans.</p></div>`;
+        } else {
+            const total = active.reduce((s, l) => s + l.amount, 0);
+            pageList.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;margin-bottom:4px;border-bottom:2px solid var(--border);">
+                  <span style="opacity:.6;font-size:.9rem;">${active.length} active loan${active.length > 1 ? 's' : ''}</span>
+                  <span style="font-weight:700;font-size:1.1rem;color:var(--accent);">Total: ${fmt(total)}</span>
+                </div>
+                ${active.map(loanRowHTML).join('')}`;
+        }
+    }
 }
 
 /* ═══════════════════════════════════════════════
