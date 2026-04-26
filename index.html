@@ -200,15 +200,22 @@
                 <span class="goal-target-name" id="goalName">Car</span>
                 <span class="goal-target-amount" id="goalAmount">€0.00</span>
               </div>
-              <div class="goal-remaining" id="goalRemaining">€0.00 remaining</div>
+              <div style="text-align:right;">
+                <div class="goal-remaining" id="goalRemaining">€0.00 remaining</div>
+                <div id="goalDeadlineInfo" style="font-size:.75rem;opacity:.55;margin-top:2px;"></div>
+              </div>
             </div>
-            <div class="goal-progress-wrap">
-              <div class="goal-progress-bar" id="goalProgressBar" style="width: 0%;"></div>
+            <div style="display:flex;align-items:center;gap:10px;margin:10px 0 4px;">
+              <div class="goal-progress-wrap" style="flex:1;margin:0;">
+                <div class="goal-progress-bar" id="goalProgressBar" style="width: 0%;"></div>
+              </div>
+              <span id="goalPct" style="font-size:.8rem;font-weight:700;opacity:.7;white-space:nowrap;">0%</span>
             </div>
             <div class="goal-footer">
-              <span class="goal-avg" id="goalAvg">Avg savings: €0.00/mo</span>
-              <span class="goal-eta" id="goalEta">ETA: -- months</span>
+              <span class="goal-avg" id="goalAvg">Saved: €0.00</span>
+              <span class="goal-eta" id="goalEta">ETA: --</span>
             </div>
+            <div id="goalNeedPerMonth" style="font-size:.78rem;opacity:.6;margin-top:6px;text-align:right;"></div>
           </div>
           <div class="empty-state" id="noGoalWidget">
             <span class="material-symbols-rounded">flag</span>
@@ -282,9 +289,28 @@
             <select id="filterCategory" class="select-pill">
               <option value="">All Categories</option>
             </select>
-            <select id="filterMonth" class="select-pill">
-              <option value="">All Months</option>
-            </select>
+            <div class="cal-filter-wrap">
+              <button class="chip cal-toggle-btn" id="calToggleBtn" title="Filter by date">
+                <span class="material-symbols-rounded">calendar_month</span>
+                <span id="calLabel">All Time</span>
+              </button>
+              <div class="cal-popover" id="calPopover" style="display:none">
+                <div class="cal-quick-chips">
+                  <button class="chip cal-quick active" data-range="all">All</button>
+                  <button class="chip cal-quick" data-range="today">Today</button>
+                  <button class="chip cal-quick" data-range="week">This Week</button>
+                  <button class="chip cal-quick" data-range="month">This Month</button>
+                  <button class="chip cal-quick" data-range="custom">Custom</button>
+                </div>
+                <div class="cal-month-nav" id="calMonthNav">
+                  <button class="cal-nav-btn" id="calPrev">&#8249;</button>
+                  <span class="cal-month-label" id="calMonthLabel"></span>
+                  <button class="cal-nav-btn" id="calNext">&#8250;</button>
+                </div>
+                <div class="cal-grid" id="calGrid"></div>
+                <div class="cal-range-labels" id="calRangeLabels"></div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="transaction-list" id="allList">
@@ -462,6 +488,10 @@
             <input type="number" id="goalInputAmount" class="form-input amount-input" placeholder="0.00" min="1"
               step="0.01" required />
           </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="goalInputDeadline">Target Date <span class="optional">(optional)</span></label>
+          <input type="date" id="goalInputDeadline" class="form-input" />
         </div>
         <div class="modal-actions" style="justify-content: space-between;">
           <button type="button" class="btn btn--ghost" id="clearGoalBtn" style="color: #ef4444;">
@@ -778,6 +808,28 @@
            transactions = JSON.parse(cache);
            if (typeof scheduleRefresh === 'function') scheduleRefresh();
         }
+      });
+
+      // ── Loans real-time listener ──
+      const loansRef = collection(db, 'loans');
+      onSnapshot(loansRef, (snapshot) => {
+        if (!window._loans) window._loans = [];
+        snapshot.docChanges().forEach(change => {
+          if (change.type === 'added') {
+            if (!window._loans.find(l => l.id === change.doc.id))
+              window._loans.push({ id: change.doc.id, ...change.doc.data() });
+          } else if (change.type === 'modified') {
+            const idx = window._loans.findIndex(l => l.id === change.doc.id);
+            if (idx !== -1) window._loans[idx] = { id: change.doc.id, ...change.doc.data() };
+          } else if (change.type === 'removed') {
+            window._loans = window._loans.filter(l => l.id !== change.doc.id);
+          }
+        });
+        localStorage.setItem('fintrack_loans', JSON.stringify(window._loans));
+        window.loans = window._loans;
+        if (typeof renderLoans === 'function') renderLoans();
+      }, err => {
+        console.error('Loans sync error:', err);
       });
     });
 

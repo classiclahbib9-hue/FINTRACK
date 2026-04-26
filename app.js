@@ -508,49 +508,70 @@ function renderSavingsGoal() {
     goalWidget.style.display = 'block';
     noGoalWidget.style.display = 'none';
 
+    const target = savingsGoal.amount;
+    // Use actual account balance (cash + card), not transaction net
+    const saved = accountBases.cash + accountBases.card;
+    const remaining = Math.max(0, target - saved);
+    const pct = Math.min(100, Math.max(0, (saved / target) * 100));
+
     document.getElementById('goalName').textContent = savingsGoal.name;
-    document.getElementById('goalAmount').textContent = fmt(savingsGoal.amount);
-
-    const inc = totalIncome(visibleTxs());
-    const exp = totalExpense(visibleTxs());
-    const bal = inc - exp;
-
-    let remaining = savingsGoal.amount - bal;
-    if (remaining < 0) remaining = 0;
-
-    document.getElementById('goalRemaining').textContent = fmt(remaining) + ' remaining';
-
-    let pct = (bal / savingsGoal.amount) * 100;
-    if (pct < 0) pct = 0;
-    if (pct > 100) pct = 100;
+    document.getElementById('goalAmount').textContent = fmt(target);
+    document.getElementById('goalRemaining').textContent = remaining > 0 ? fmt(remaining) + ' remaining' : '🎉 Goal reached!';
     document.getElementById('goalProgressBar').style.width = pct + '%';
+    document.getElementById('goalPct').textContent = pct.toFixed(1) + '%';
+    document.getElementById('goalAvg').textContent = 'Saved: ' + fmt(saved);
 
-    let avgSavings = 0;
-    let monthsToGoal = '--';
-
+    // ETA based on avg monthly net savings from transactions
+    let etaText = '--';
     if (transactions.length > 0) {
         const dates = transactions.map(t => new Date(t.date));
         const minDate = new Date(Math.min(...dates));
-        const maxDate = new Date(); // Present time
-        let monthsDiff = (maxDate.getFullYear() - minDate.getFullYear()) * 12 + (maxDate.getMonth() - minDate.getMonth()) + 1;
+        let monthsDiff = (new Date().getFullYear() - minDate.getFullYear()) * 12 + (new Date().getMonth() - minDate.getMonth()) + 1;
         if (monthsDiff < 1) monthsDiff = 1;
+        const avgMonthlyNet = (totalIncome(transactions) - totalExpense(transactions)) / monthsDiff;
 
-        avgSavings = bal / monthsDiff;
-
-        if (avgSavings > 0 && remaining > 0) {
-            monthsToGoal = Math.ceil(remaining / avgSavings).toString();
-        } else if (remaining === 0) {
-            monthsToGoal = '0';
+        if (remaining === 0) {
+            etaText = '🎉 Reached';
+        } else if (avgMonthlyNet > 0) {
+            const months = Math.ceil(remaining / avgMonthlyNet);
+            const eta = new Date();
+            eta.setMonth(eta.getMonth() + months);
+            etaText = eta.toLocaleDateString('en-IE', { month: 'short', year: 'numeric' });
         }
     }
 
-    document.getElementById('goalAvg').textContent = 'Avg savings: ' + fmt(avgSavings) + '/mo';
-    document.getElementById('goalEta').textContent = 'ETA: ' + monthsToGoal + (monthsToGoal === '1' ? ' month' : ' months');
+    // Deadline-based calculations
+    const deadlineEl = document.getElementById('goalDeadlineInfo');
+    const needEl = document.getElementById('goalNeedPerMonth');
+    if (savingsGoal.deadline) {
+        const deadlineDate = new Date(savingsGoal.deadline);
+        const today = new Date();
+        const daysLeft = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+        const monthsLeft = Math.max(1, Math.ceil(daysLeft / 30));
+
+        if (daysLeft > 0 && remaining > 0) {
+            const needPerMonth = remaining / monthsLeft;
+            deadlineEl.textContent = `📅 ${daysLeft} days left (${deadlineDate.toLocaleDateString('en-IE', { month: 'short', year: 'numeric' })})`;
+            needEl.textContent = `Need to save ${fmt(needPerMonth)}/mo to hit deadline`;
+        } else if (daysLeft <= 0) {
+            deadlineEl.textContent = remaining > 0 ? '⚠️ Deadline passed' : '🎉 Goal reached before deadline!';
+            needEl.textContent = '';
+        } else {
+            deadlineEl.textContent = `📅 ${deadlineDate.toLocaleDateString('en-IE', { month: 'short', year: 'numeric' })}`;
+            needEl.textContent = '';
+        }
+    } else {
+        deadlineEl.textContent = '';
+        needEl.textContent = '';
+    }
+
+    document.getElementById('goalEta').textContent = 'ETA: ' + etaText;
 }
 
 function openGoalModal() {
     document.getElementById('goalInputName').value = savingsGoal ? savingsGoal.name : '';
     document.getElementById('goalInputAmount').value = savingsGoal ? savingsGoal.amount : '';
+    document.getElementById('goalInputDeadline').value = savingsGoal?.deadline || '';
     document.getElementById('goalBackdrop').classList.add('show');
 }
 
@@ -569,7 +590,8 @@ function saveGoal(e) {
         return;
     }
 
-    savingsGoal = { name, amount };
+    const deadline = document.getElementById('goalInputDeadline').value || null;
+    savingsGoal = { name, amount, ...(deadline && { deadline }) };
     localStorage.setItem(GOAL_KEY, JSON.stringify(savingsGoal));
     closeGoalModal();
     renderSavingsGoal();
@@ -591,28 +613,45 @@ function renderRecent() {
     list.querySelectorAll('.tx-item').forEach(el => el.addEventListener('click', () => openModal(el.dataset.id)));
 }
 
+/* ── Calendar date filter state ─────────────── */
+window._calRange = { type: 'all', from: null, to: null };
+
 /* ── Transactions Page ──────────────────────── */
 function renderTransactions() {
     populateCategoryFilter();
-    populateMonthFilter();
+    initCalendarFilter();
     applyFilters();
 }
 
 function applyFilters() {
     const search = document.getElementById('searchInput').value.toLowerCase();
     const cat = document.getElementById('filterCategory').value;
-    const month = document.getElementById('filterMonth').value;
+    const { type: rType, from: rFrom, to: rTo } = window._calRange;
 
     let filtered = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
     if (filterType !== 'all') filtered = filtered.filter(t => t.type === filterType);
     if (filterAccount !== 'all') filtered = filtered.filter(t => (t.account || 'cash') === filterAccount);
     if (cat) filtered = filtered.filter(t => t.category === cat);
-    if (month === 'today') {
+
+    if (rType === 'today') {
         const today = new Date().toISOString().slice(0, 10);
         filtered = filtered.filter(t => t.date === today);
-    } else if (month) {
-        filtered = filtered.filter(t => t.date.slice(0, 7) === month);
+    } else if (rType === 'week') {
+        const now = new Date();
+        const dow = now.getDay();
+        const mon = new Date(now); mon.setDate(now.getDate() - ((dow + 6) % 7));
+        const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+        const f = mon.toISOString().slice(0, 10), t2 = sun.toISOString().slice(0, 10);
+        filtered = filtered.filter(t => t.date >= f && t.date <= t2);
+    } else if (rType === 'month') {
+        const m = new Date().toISOString().slice(0, 7);
+        filtered = filtered.filter(t => t.date.slice(0, 7) === m);
+    } else if (rType === 'custom' && rFrom && rTo) {
+        filtered = filtered.filter(t => t.date >= rFrom && t.date <= rTo);
+    } else if (rType === 'custom' && rFrom) {
+        filtered = filtered.filter(t => t.date === rFrom);
     }
+
     if (search) filtered = filtered.filter(t =>
         t.category.toLowerCase().includes(search) ||
         (t.note || '').toLowerCase().includes(search) ||
@@ -666,19 +705,132 @@ function populateCategoryFilter() {
         allCats.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${CAT_EMOJI[c] || ''} ${c}</option>`).join('');
 }
 
-function populateMonthFilter() {
-    const sel = document.getElementById('filterMonth');
-    if (!sel) return;
+/* ── Calendar filter widget ──────────────────── */
+let _calInitDone = false;
+let _calViewYear, _calViewMonth;
+
+function initCalendarFilter() {
+    if (_calInitDone) { renderCalGrid(); return; }
+    _calInitDone = true;
+
+    const now = new Date();
+    _calViewYear = now.getFullYear();
+    _calViewMonth = now.getMonth();
+
+    const toggleBtn = document.getElementById('calToggleBtn');
+    const popover   = document.getElementById('calPopover');
+
+    toggleBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const open = popover.style.display !== 'none';
+        popover.style.display = open ? 'none' : 'block';
+        if (!open) renderCalGrid();
+    });
+
+    document.addEventListener('click', e => {
+        if (!document.getElementById('calPopover')?.contains(e.target) &&
+            !document.getElementById('calToggleBtn')?.contains(e.target)) {
+            if (popover) popover.style.display = 'none';
+        }
+    });
+
+    document.getElementById('calPrev').addEventListener('click', () => {
+        _calViewMonth--;
+        if (_calViewMonth < 0) { _calViewMonth = 11; _calViewYear--; }
+        renderCalGrid();
+    });
+    document.getElementById('calNext').addEventListener('click', () => {
+        _calViewMonth++;
+        if (_calViewMonth > 11) { _calViewMonth = 0; _calViewYear++; }
+        renderCalGrid();
+    });
+
+    document.querySelectorAll('.cal-quick').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.cal-quick').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const range = btn.dataset.range;
+            if (range !== 'custom') {
+                window._calRange = { type: range, from: null, to: null };
+                updateCalLabel();
+                renderCalGrid();
+                applyFilters();
+            } else {
+                window._calRange = { type: 'custom', from: null, to: null };
+                renderCalGrid();
+            }
+        });
+    });
+
+    renderCalGrid();
+}
+
+function renderCalGrid() {
+    const grid  = document.getElementById('calGrid');
+    const label = document.getElementById('calMonthLabel');
+    const rangeLabels = document.getElementById('calRangeLabels');
+    if (!grid) return;
+
+    label.textContent = MONTH_NAMES[_calViewMonth] + ' ' + _calViewYear;
+
+    const firstDay = new Date(_calViewYear, _calViewMonth, 1).getDay();
+    const offset = (firstDay + 6) % 7; // Monday start
+    const daysInMonth = new Date(_calViewYear, _calViewMonth + 1, 0).getDate();
     const today = new Date().toISOString().slice(0, 10);
-    const current = sel.value !== undefined ? sel.value : today;
-    const months = [...new Set(visibleTxs().map(t => t.date.slice(0, 7)))].sort().reverse();
-    sel.innerHTML = `<option value="">All Time</option><option value="today" ${current === 'today' ? 'selected' : ''}>Today</option>` +
-        months.map(m => {
-            const [y, mo] = m.split('-');
-            const label = MONTH_NAMES[parseInt(mo) - 1] + ' ' + y;
-            return `<option value="${m}" ${m === current ? 'selected' : ''}>${label}</option>`;
-        }).join('');
-    if (!sel.value) sel.value = 'today';
+
+    const { type, from, to } = window._calRange;
+    const isCustom = type === 'custom';
+
+    let html = '<div class="cal-dow">Mo</div><div class="cal-dow">Tu</div><div class="cal-dow">We</div><div class="cal-dow">Th</div><div class="cal-dow">Fr</div><div class="cal-dow">Sa</div><div class="cal-dow">Su</div>';
+    for (let i = 0; i < offset; i++) html += '<div class="cal-cell empty"></div>';
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const iso = `${_calViewYear}-${String(_calViewMonth + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        let cls = 'cal-cell';
+        if (iso === today) cls += ' cal-today';
+        if (isCustom) {
+            if (iso === from) cls += ' cal-sel-start';
+            if (iso === to)   cls += ' cal-sel-end';
+            if (from && to && iso > from && iso < to) cls += ' cal-in-range';
+            if (from && !to && iso === from) cls += ' cal-sel-start';
+        }
+        html += `<div class="${cls}" data-date="${iso}">${d}</div>`;
+    }
+    grid.innerHTML = html;
+
+    grid.querySelectorAll('.cal-cell[data-date]').forEach(cell => {
+        cell.addEventListener('click', () => {
+            const d = cell.dataset.date;
+            if (!isCustom) return;
+            const { from: f, to: t2 } = window._calRange;
+            if (!f || (f && t2)) {
+                window._calRange = { type: 'custom', from: d, to: null };
+            } else {
+                window._calRange = { type: 'custom', from: f <= d ? f : d, to: f <= d ? d : f };
+            }
+            updateCalLabel();
+            applyFilters();
+            renderCalGrid();
+        });
+    });
+
+    if (isCustom && from) {
+        const fmtD = s => { const [y,m,d] = s.split('-'); return `${d}/${m}/${y}`; };
+        rangeLabels.textContent = to ? `${fmtD(from)} → ${fmtD(to)}` : `From ${fmtD(from)}`;
+    } else {
+        rangeLabels.textContent = '';
+    }
+}
+
+function updateCalLabel() {
+    const el = document.getElementById('calLabel');
+    if (!el) return;
+    const { type, from, to } = window._calRange;
+    const fmtD = s => { const [,m,d] = s.split('-'); return `${d}/${m}`; };
+    const labels = { all: 'All Time', today: 'Today', week: 'This Week', month: 'This Month' };
+    if (type === 'custom' && from && to)  el.textContent = `${fmtD(from)}–${fmtD(to)}`;
+    else if (type === 'custom' && from)   el.textContent = fmtD(from);
+    else                                  el.textContent = labels[type] || 'All Time';
 }
 
 function loadMoreTransactions() {
@@ -1114,11 +1266,7 @@ function doTransfer() {
    LOANS — MONEY LENT
 ═══════════════════════════════════════════════ */
 const LOANS_KEY = 'fintrack_loans';
-let loans = JSON.parse(localStorage.getItem(LOANS_KEY) || '[]');
-
-function saveLoans() {
-    localStorage.setItem(LOANS_KEY, JSON.stringify(loans));
-}
+let loans = JSON.parse(localStorage.getItem(LOANS_KEY) || '[]'); // Firestore is primary; this is the cache
 
 let _loanFromAcct = 'cash';
 
@@ -1137,42 +1285,46 @@ function closeLoanModal() {
     document.getElementById('loanBackdrop').classList.remove('show');
 }
 
-function confirmLoan() {
+async function confirmLoan() {
     const person = document.getElementById('loanPerson').value.trim();
     const amount = parseFloat(document.getElementById('loanAmount').value);
-    const date   = document.getElementById('loanDate').value;
+    const date   = document.getElementById('loanDate').value || new Date().toISOString().slice(0, 10);
     const note   = document.getElementById('loanNote').value.trim();
 
     if (!person) { showToast('Enter a person name.'); return; }
     if (!amount || amount <= 0) { showToast('Enter a valid amount.'); return; }
     if (accountBases[_loanFromAcct] < amount) { showToast('Insufficient balance.'); return; }
 
-    const finalDate = date || new Date().toISOString().slice(0, 10);
-
-    accountBases[_loanFromAcct] -= amount;
-    saveAccountBases();
-
-    loans.push({ id: Date.now().toString(), person, amount, account: _loanFromAcct, date: finalDate, note, repaid: false });
-    saveLoans();
-    loans = JSON.parse(localStorage.getItem(LOANS_KEY) || '[]'); // re-read to confirm write
-
-    closeLoanModal();
-    renderLoans();
-    scheduleRefresh();
-    showToast(`Lent ${fmt(amount)} to ${person}.`);
+    try {
+        const loansRef = window.fbCollection(window.db, 'loans');
+        await window.fbAddDoc(loansRef, { person, amount, account: _loanFromAcct, date, note, repaid: false });
+        // Deduct balance only after Firestore confirms
+        accountBases[_loanFromAcct] -= amount;
+        saveAccountBases();
+        closeLoanModal();
+        scheduleRefresh();
+        showToast(`Lent ${fmt(amount)} to ${person}.`);
+    } catch (err) {
+        console.error('Error saving loan:', err);
+        showToast('Error saving loan — check connection');
+    }
 }
 
-function repayLoan(id) {
+async function repayLoan(id) {
     const loan = loans.find(l => l.id === id);
     if (!loan) return;
-    accountBases[loan.account] += loan.amount;
-    saveAccountBases();
-    loans = loans.filter(l => l.id !== id);
-    saveLoans();
-    loans = JSON.parse(localStorage.getItem(LOANS_KEY) || '[]');
-    renderLoans();
-    scheduleRefresh();
-    showToast(`${loan.person} repaid ${fmt(loan.amount)} — added back to ${loan.account}.`);
+    try {
+        const docRef = window.fbDoc(window.db, 'loans', id);
+        await window.fbDeleteDoc(docRef);
+        // Add back balance only after Firestore confirms
+        accountBases[loan.account] += loan.amount;
+        saveAccountBases();
+        scheduleRefresh();
+        showToast(`${loan.person} repaid ${fmt(loan.amount)} — added back to ${loan.account}.`);
+    } catch (err) {
+        console.error('Error repaying loan:', err);
+        showToast('Error updating loan — check connection');
+    }
 }
 
 function loanRowHTML(l) {
