@@ -846,12 +846,20 @@ function renderCalGrid() {
     grid.querySelectorAll('.cal-cell[data-date]').forEach(cell => {
         cell.addEventListener('click', () => {
             const d = cell.dataset.date;
-            if (!isCustom) return;
             const { from: f, to: t2 } = window._calRange;
+            // First tap on a day (or after a completed range) → start fresh range
             if (!f || (f && t2)) {
                 window._calRange = { type: 'custom', from: d, to: null };
+                // activate custom chip visually
+                document.querySelectorAll('.cal-quick').forEach(b => b.classList.remove('active'));
+                document.querySelector('.cal-quick[data-range="custom"]')?.classList.add('active');
             } else {
-                window._calRange = { type: 'custom', from: f <= d ? f : d, to: f <= d ? d : f };
+                // Second tap → complete the range (or set single day if same date)
+                const from2 = f <= d ? f : d;
+                const to2   = f <= d ? d : f;
+                window._calRange = { type: 'custom', from: from2, to: to2 };
+                // Close popover after range selected
+                document.getElementById('calPopover').style.display = 'none';
             }
             updateCalLabel();
             applyFilters();
