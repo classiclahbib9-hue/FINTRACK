@@ -702,7 +702,7 @@ function populateCategoryFilter() {
     const base = filterAccount === 'all' ? transactions : transactions.filter(t => (t.account || 'cash') === filterAccount);
     const allCats = [...new Set(base.map(t => t.category))].sort();
     sel.innerHTML = '<option value="">All Categories</option>' +
-        allCats.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${CAT_EMOJI[c] || ''} ${c}</option>`).join('');
+        allCats.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${c}</option>`).join('');
 }
 
 /* ── Calendar filter widget ──────────────────── */
@@ -723,8 +723,15 @@ function initCalendarFilter() {
     toggleBtn.addEventListener('click', e => {
         e.stopPropagation();
         const open = popover.style.display !== 'none';
-        popover.style.display = open ? 'none' : 'block';
-        if (!open) renderCalGrid();
+        if (open) { popover.style.display = 'none'; return; }
+        const rect = toggleBtn.getBoundingClientRect();
+        const popW = 280;
+        let left = rect.left;
+        if (left + popW > window.innerWidth - 8) left = window.innerWidth - popW - 8;
+        popover.style.top  = (rect.bottom + 8) + 'px';
+        popover.style.left = left + 'px';
+        popover.style.display = 'block';
+        renderCalGrid();
     });
 
     document.addEventListener('click', e => {

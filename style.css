@@ -1024,10 +1024,8 @@ body.has-custom-bg .spatial-bg {
 .cal-toggle-btn .material-symbols-rounded { font-size: 17px; }
 
 .cal-popover {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  z-index: 999;
+  position: fixed;
+  z-index: 9999;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
