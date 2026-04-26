@@ -719,15 +719,23 @@ function initCalendarFilter() {
 
     const toggleBtn = document.getElementById('calToggleBtn');
     const popover   = document.getElementById('calPopover');
+    
+    // Move to body to escape any stacking context issues (e.g. from backdrop-filter)
+    if (popover && popover.parentNode !== document.body) {
+        document.body.appendChild(popover);
+    }
 
     toggleBtn.addEventListener('click', e => {
         e.stopPropagation();
         const open = popover.style.display !== 'none';
         if (open) { popover.style.display = 'none'; return; }
         const rect = toggleBtn.getBoundingClientRect();
-        const popW = 280;
+        const vw = window.innerWidth;
+        const popW = Math.min(288, vw - 16);
+        popover.style.width = popW + 'px';
         let left = rect.left;
-        if (left + popW > window.innerWidth - 8) left = window.innerWidth - popW - 8;
+        if (left + popW > vw - 8) left = vw - popW - 8;
+        if (left < 8) left = 8;
         popover.style.top  = (rect.bottom + 8) + 'px';
         popover.style.left = left + 'px';
         popover.style.display = 'block';
