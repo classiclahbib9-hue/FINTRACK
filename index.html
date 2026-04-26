@@ -12,7 +12,7 @@
   <title>FinTrack – Personal Finance</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=4" />
+  <link rel="stylesheet" href="style.css?v=5" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
@@ -286,9 +286,13 @@
             <button class="chip acct-chip" data-account-filter="card">💳 Card</button>
           </div>
           <div class="filter-row">
-            <select id="filterCategory" class="select-pill">
-              <option value="">All Categories</option>
-            </select>
+            <div class="custom-dropdown filter-cat-dropdown" id="filterCategoryDropdown">
+              <div class="custom-dropdown-selected" id="filterCategorySelected">
+                <span id="filterCategoryContent">All Categories</span>
+                <span class="material-symbols-rounded">expand_more</span>
+              </div>
+              <div class="custom-dropdown-options" id="filterCategoryOptions"></div>
+            </div>
             <div class="cal-filter-wrap">
               <button class="chip cal-toggle-btn" id="calToggleBtn" title="Filter by date">
                 <span class="material-symbols-rounded">calendar_month</span>

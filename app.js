@@ -625,7 +625,7 @@ function renderTransactions() {
 
 function applyFilters() {
     const search = document.getElementById('searchInput').value.toLowerCase();
-    const cat = document.getElementById('filterCategory').value;
+    const cat = window._filterCat || '';
     const { type: rType, from: rFrom, to: rTo } = window._calRange;
 
     let filtered = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
@@ -697,12 +697,42 @@ function applyFilters() {
 }
 
 function populateCategoryFilter() {
-    const sel = document.getElementById('filterCategory');
-    const current = sel.value;
+    const dropdown  = document.getElementById('filterCategoryDropdown');
+    const content   = document.getElementById('filterCategoryContent');
+    const optsList  = document.getElementById('filterCategoryOptions');
+    if (!dropdown) return;
+
+    const current = window._filterCat || '';
     const base = filterAccount === 'all' ? transactions : transactions.filter(t => (t.account || 'cash') === filterAccount);
-    const allCats = [...new Set(base.map(t => t.category))].sort();
-    sel.innerHTML = '<option value="">All Categories</option>' +
-        allCats.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${c}</option>`).join('');
+    const allCats = ['', ...new Set(base.map(t => t.category))].sort();
+
+    const render = (cats) => {
+        optsList.innerHTML = cats.map(c =>
+            `<div class="custom-dropdown-option${c === current ? ' selected' : ''}" data-value="${c}">
+                ${c ? (CAT_EMOJI[c] ? CAT_EMOJI[c] + ' ' : '') + c : 'All Categories'}
+            </div>`
+        ).join('');
+        optsList.querySelectorAll('.custom-dropdown-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                window._filterCat = opt.dataset.value;
+                content.textContent = opt.textContent.trim();
+                dropdown.classList.remove('active');
+                applyFilters();
+            });
+        });
+    };
+
+    render(allCats);
+    content.textContent = current ? (CAT_EMOJI[current] ? CAT_EMOJI[current] + ' ' : '') + current : 'All Categories';
+
+    if (!dropdown._catListenerAdded) {
+        dropdown._catListenerAdded = true;
+        dropdown.querySelector('.custom-dropdown-selected').addEventListener('click', e => {
+            e.stopPropagation();
+            dropdown.classList.toggle('active');
+        });
+        document.addEventListener('click', () => dropdown.classList.remove('active'));
+    }
 }
 
 /* ── Calendar filter widget ──────────────────── */
