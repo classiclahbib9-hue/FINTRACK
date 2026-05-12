@@ -81,10 +81,10 @@ function saveAccountBases() {
 }
 
 let activeAccount = 'all';
-let transactions = [];
+var transactions = [];
 
 const BASE_BALANCE = 80475.94; // cash (51000) + card (29475.94) 
-let savingsGoal = null;
+var savingsGoal = null;
 let savedBg = null;
 let editId = null;
 let activePage = 'dashboard';
@@ -580,7 +580,7 @@ function closeGoalModal() {
     document.getElementById('goalForm').reset();
 }
 
-function saveGoal(e) {
+async function saveGoal(e) {
     e.preventDefault();
     const name = document.getElementById('goalInputName').value.trim();
     const amount = parseFloat(document.getElementById('goalInputAmount').value);
@@ -591,19 +591,29 @@ function saveGoal(e) {
     }
 
     const deadline = document.getElementById('goalInputDeadline').value || null;
-    savingsGoal = { name, amount, ...(deadline && { deadline }) };
-    localStorage.setItem(GOAL_KEY, JSON.stringify(savingsGoal));
-    closeGoalModal();
-    renderSavingsGoal();
-    showToast('Goal saved ✓');
+    const goalData = { name, amount, ...(deadline && { deadline }) };
+    
+    try {
+        const goalRef = window.fbDoc(window.db, 'goals', 'active_goal');
+        await window.fbSetDoc(goalRef, goalData);
+        closeGoalModal();
+        showToast('Goal saved ✓');
+    } catch (err) {
+        console.error('Error saving goal:', err);
+        showToast('Error saving goal — check connection');
+    }
 }
 
-function clearGoal() {
-    savingsGoal = null;
-    localStorage.removeItem(GOAL_KEY);
-    closeGoalModal();
-    renderSavingsGoal();
-    showToast('Goal cleared');
+async function clearGoal() {
+    try {
+        const goalRef = window.fbDoc(window.db, 'goals', 'active_goal');
+        await window.fbDeleteDoc(goalRef);
+        closeGoalModal();
+        showToast('Goal cleared');
+    } catch (err) {
+        console.error('Error clearing goal:', err);
+        showToast('Error clearing goal — check connection');
+    }
 }
 
 function renderRecent() {
@@ -1319,7 +1329,7 @@ function doTransfer() {
    LOANS — MONEY LENT
 ═══════════════════════════════════════════════ */
 const LOANS_KEY = 'fintrack_loans';
-let loans = JSON.parse(localStorage.getItem(LOANS_KEY) || '[]'); // Firestore is primary; this is the cache
+var loans = JSON.parse(localStorage.getItem(LOANS_KEY) || '[]'); // Firestore is primary; this is the cache
 
 let _loanFromAcct = 'cash';
 

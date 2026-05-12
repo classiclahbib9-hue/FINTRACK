@@ -735,7 +735,7 @@
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc, writeBatch, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -762,6 +762,7 @@
     window.fbUpdateDoc  = updateDoc;
     window.fbDeleteDoc  = deleteDoc;
     window.fbWriteBatch = writeBatch;
+    window.fbSetDoc     = setDoc;
 
     // ── Subscribe to Firestore INSIDE the module, right after auth confirms.
     // This avoids every cross-script timing/race issue completely.
@@ -829,11 +830,28 @@
             window._loans = window._loans.filter(l => l.id !== change.doc.id);
           }
         });
+        
+        // Sort descending by date
+        window._loans.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
         localStorage.setItem('fintrack_loans', JSON.stringify(window._loans));
         window.loans = window._loans;
         if (typeof renderLoans === 'function') renderLoans();
+      });
+      
+      // ── Savings Goal real-time listener ──
+      const goalRef = doc(db, 'goals', 'active_goal');
+      onSnapshot(goalRef, (snapshot) => {
+        if (snapshot.exists()) {
+          window.savingsGoal = snapshot.data();
+          localStorage.setItem('fintrack_savings_goal', JSON.stringify(window.savingsGoal));
+        } else {
+          window.savingsGoal = null;
+          localStorage.removeItem('fintrack_savings_goal');
+        }
+        if (typeof renderSavingsGoal === 'function') renderSavingsGoal();
       }, err => {
-        console.error('Loans sync error:', err);
+        console.error('Goal sync error:', err);
       });
     });
 
