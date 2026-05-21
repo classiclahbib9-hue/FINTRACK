@@ -59,6 +59,7 @@ const CAT_EMOJI = {
     'License Sales': '🔑', 'Software': '💿', 'Trading': '📈',
     'Investment': '💰', 'Bonus': '🏆', 'Gift': '🎁',
     'Side Hustle': '⚡', 'Subscription': '📋',
+    'Ecart': '⚖️',
 };
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const PALETTE = ['#818cf8', '#10f9a2', '#ff3e6c', '#f59e0b', '#06b6d4', '#8b5cf6', '#f97316', '#ec4899', '#14b8a6', '#a855f7'];
@@ -67,6 +68,8 @@ const PALETTE = ['#818cf8', '#10f9a2', '#ff3e6c', '#f59e0b', '#06b6d4', '#8b5cf6
 const GOAL_KEY = 'fintrack_savings_goal';
 const BG_KEY   = 'fintrack_bg';
 const ACCOUNTS_KEY = 'fintrack_account_bases_v3'; // bump version = fresh reset
+const BUDGETS_KEY = 'fintrack_monthly_budgets';
+const RECURRING_KEY = 'fintrack_recurring_rules';
 
 // The balance is stored directly here and updated on every add/edit/delete.
 // Historical transactions never touch these numbers.
@@ -93,6 +96,8 @@ let filterAccount = 'all';
 let barChartInstance = null;
 let donutChartInstance = null;
 let donutChartInstanceIncome = null;
+let monthlyBudgets = JSON.parse(localStorage.getItem(BUDGETS_KEY) || '{}');
+let recurringRules = JSON.parse(localStorage.getItem(RECURRING_KEY) || '[]');
 
 // ── Debounced render ─────────────────────────
 let _refreshTimer = null;
@@ -150,6 +155,14 @@ function saveData() {
     localStorage.setItem(GOAL_KEY, JSON.stringify(savingsGoal));
 }
 
+function saveBudgets() {
+    localStorage.setItem(BUDGETS_KEY, JSON.stringify(monthlyBudgets));
+}
+
+function saveRecurringRules() {
+    localStorage.setItem(RECURRING_KEY, JSON.stringify(recurringRules));
+}
+
 /* ── Google Sheets Sync ─────────────────────── */
 const SHEET_WEBHOOK = "https://script.google.com/macros/s/AKfycbx1vk5fewmzISMm6r7llXoOmgVSl539Rl_Q2ufQIRn6w_GW1lc84AiYlAxtQOK6kIQ5hA/exec";
 
@@ -178,10 +191,13 @@ function dateLabel(iso) {
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
 function totalIncome(txs) {
-    return txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+    return txs.filter(t => t.type === 'income' && !isReferenceTx(t)).reduce((s, t) => s + t.amount, 0);
 }
 function totalExpense(txs) {
-    return txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    return txs.filter(t => t.type === 'expense' && !isReferenceTx(t)).reduce((s, t) => s + t.amount, 0);
+}
+function isReferenceTx(t) {
+    return !!(t?.isAdjustment || t?.isTransfer || t?.category === 'Ecart' || t?.category === 'Transfer');
 }
 function balance() {
     const acct = activeAccount || 'all';
@@ -227,12 +243,15 @@ function showPage(id) {
     document.getElementById('page-' + id).classList.add('active');
     const nav = document.getElementById('nav-' + id);
     if (nav) nav.classList.add('active');
-    const titles = { dashboard: 'Dashboard', transactions: 'Transactions', loans: 'Loans', stats: 'Statistics' };
+    const titles = { dashboard: 'Dashboard', transactions: 'Transactions', loans: 'Loans', stats: 'Statistics', budgets: 'Budgets', recurring: 'Automation', history: 'History' };
     document.getElementById('pageTitle').textContent = titles[id] || id;
     closeSidebar();
     if (id === 'dashboard') renderDashboard();
     if (id === 'transactions') renderTransactions();
     if (id === 'stats') renderStats();
+    if (id === 'budgets') renderBudgets();
+    if (id === 'recurring') renderRecurring();
+    if (id === 'history') renderHistory();
     
     // Antigravity Transition
     initAntigravityAnimations();
@@ -284,14 +303,14 @@ function closeModal() {
 }
 
 function setModalType(type) {
-    document.querySelectorAll('.type-tab').forEach(t => {
+    document.querySelectorAll('#modal .type-tab[data-type]').forEach(t => {
         t.classList.toggle('active', t.dataset.type === type);
     });
     buildCategorySelect(type, '');
 }
 
 function getModalType() {
-    return document.querySelector('.type-tab.active')?.dataset.type || 'expense';
+    return document.querySelector('#modal .type-tab.active[data-type]')?.dataset.type || 'expense';
 }
 
 function setModalAccount(acct) {
@@ -418,6 +437,9 @@ function refreshAll() {
     if (activePage === 'dashboard') renderDashboard();
     else if (activePage === 'transactions') renderTransactions();
     else if (activePage === 'stats') renderStats();
+    else if (activePage === 'budgets') renderBudgets();
+    else if (activePage === 'recurring') renderRecurring();
+    else if (activePage === 'history') renderHistory();
     
     // Only animate if we actually changed something meaningful 
     // and wait a moment for the browser to settle.
@@ -620,7 +642,13 @@ function renderRecent() {
     const list = document.getElementById('recentList');
     const recent = [...visibleTxs()].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
     list.innerHTML = recent.length ? recent.map(txHTML).join('') : emptyStateHTML('account_balance_wallet', 'No transactions yet.<br>Tap <strong>+</strong> to add one!');
-    list.querySelectorAll('.tx-item').forEach(el => el.addEventListener('click', () => openModal(el.dataset.id)));
+    list.querySelectorAll('.tx-item').forEach(el => el.addEventListener('click', () => {
+        if (el.dataset.reference === 'true') {
+            showToast('Reference only.');
+            return;
+        }
+        openModal(el.dataset.id);
+    }));
 }
 
 /* ── Calendar date filter state ─────────────── */
@@ -639,7 +667,7 @@ function applyFilters() {
     const { type: rType, from: rFrom, to: rTo } = window._calRange;
 
     let filtered = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
-    if (filterType !== 'all') filtered = filtered.filter(t => t.type === filterType);
+    if (filterType !== 'all') filtered = filtered.filter(t => t.type === filterType && !isReferenceTx(t));
     if (filterAccount !== 'all') filtered = filtered.filter(t => (t.account || 'cash') === filterAccount);
     if (cat) filtered = filtered.filter(t => t.category === cat);
 
@@ -685,7 +713,13 @@ function applyFilters() {
         </div>`;
     }
     list.innerHTML = html;
-    list.querySelectorAll('.tx-item').forEach(el => el.addEventListener('click', () => openModal(el.dataset.id)));
+    list.querySelectorAll('.tx-item').forEach(el => el.addEventListener('click', () => {
+        if (el.dataset.reference === 'true') {
+            showToast('Reference only.');
+            return;
+        }
+        openModal(el.dataset.id);
+    }));
 
     const inc = totalIncome(filtered);
     const exp = totalExpense(filtered);
@@ -746,6 +780,239 @@ function populateCategoryFilter() {
 }
 
 /* ── Calendar filter widget ──────────────────── */
+/* ── Reference History ───────────────────────── */
+function renderHistory() {
+    const refs = [...transactions]
+        .filter(isReferenceTx)
+        .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    const list = document.getElementById('historyList');
+    list.innerHTML = refs.length
+        ? refs.map(referenceHTML).join('')
+        : emptyStateHTML('history', 'No transfer or Ecart references yet.');
+}
+
+/* ── Monthly Budgets ─────────────────────────── */
+function populateBudgetCategorySelect() {
+    const select = document.getElementById('budgetCategory');
+    if (!select) return;
+    select.innerHTML = CAT_EXPENSE.map(c => `<option value="${c}">${CAT_EMOJI[c] || ''} ${c}</option>`).join('');
+}
+
+function saveBudgetFromForm() {
+    const category = document.getElementById('budgetCategory').value;
+    const limit = Math.round(parseFloat(document.getElementById('budgetLimit').value) * 100) / 100;
+    if (!category || !Number.isFinite(limit) || limit < 0) {
+        showToast('Enter a valid budget.');
+        return;
+    }
+    if (limit === 0) delete monthlyBudgets[category];
+    else monthlyBudgets[category] = limit;
+    saveBudgets();
+    document.getElementById('budgetLimit').value = '';
+    renderBudgets();
+    showToast(limit === 0 ? 'Budget removed.' : 'Budget saved.');
+}
+
+function renderBudgets() {
+    populateBudgetCategorySelect();
+    const month = todayISO().slice(0, 7);
+    const spentByCat = {};
+    transactions
+        .filter(t => t.type === 'expense' && !isReferenceTx(t) && (t.date || '').startsWith(month))
+        .forEach(t => { spentByCat[t.category] = (spentByCat[t.category] || 0) + t.amount; });
+
+    const cats = [...new Set([...Object.keys(monthlyBudgets), ...Object.keys(spentByCat)])].sort();
+    const list = document.getElementById('budgetList');
+    if (!cats.length) {
+        list.innerHTML = emptyStateHTML('savings', 'No budgets yet. Set one above.');
+        return;
+    }
+
+    list.innerHTML = cats.map(cat => {
+        const limit = monthlyBudgets[cat] || 0;
+        const spent = spentByCat[cat] || 0;
+        const pct = limit > 0 ? Math.min(100, Math.round((spent / limit) * 100)) : 0;
+        const over = limit > 0 && spent > limit;
+        return `
+        <div class="budget-row">
+          <div class="budget-row-head">
+            <strong>${CAT_EMOJI[cat] || ''} ${cat}</strong>
+            <span class="${over ? 'expense' : ''}">${fmt(spent)}${limit ? ' / ' + fmt(limit) : ''}</span>
+          </div>
+          <div class="budget-bar"><div class="budget-fill ${over ? 'over' : ''}" style="width:${pct}%"></div></div>
+          <div class="budget-row-foot">${limit ? (over ? 'Over by ' + fmt(spent - limit) : fmt(limit - spent) + ' left') : 'No limit set'}</div>
+        </div>`;
+    }).join('');
+}
+
+/* ── Recurring Transactions ──────────────────── */
+let _recurringType = 'expense';
+let _recurringAccount = 'cash';
+
+function setRecurringType(type) {
+    _recurringType = type;
+    document.getElementById('recurringExpenseTab').classList.toggle('active', type === 'expense');
+    document.getElementById('recurringIncomeTab').classList.toggle('active', type === 'income');
+    const select = document.getElementById('recurringCategory');
+    const cats = type === 'income' ? CAT_INCOME : CAT_EXPENSE;
+    select.innerHTML = cats.map(c => `<option value="${c}">${CAT_EMOJI[c] || ''} ${c}</option>`).join('');
+}
+
+function setRecurringAccount(account) {
+    _recurringAccount = account;
+    document.getElementById('recurringCash').classList.toggle('active', account === 'cash');
+    document.getElementById('recurringCard').classList.toggle('active', account === 'card');
+}
+
+function saveRecurringFromForm() {
+    const amount = Math.round(parseFloat(document.getElementById('recurringAmount').value) * 100) / 100;
+    const category = document.getElementById('recurringCategory').value;
+    const day = parseInt(document.getElementById('recurringDay').value, 10);
+    const note = document.getElementById('recurringNote').value.trim();
+    if (!Number.isFinite(amount) || amount <= 0) { showToast('Enter a valid amount.'); return; }
+    if (!day || day < 1 || day > 28) { showToast('Use a day from 1 to 28.'); return; }
+
+    recurringRules.push({
+        id: uid(),
+        type: _recurringType,
+        amount,
+        category,
+        account: _recurringAccount,
+        day,
+        note,
+        active: true,
+        lastRunMonth: ''
+    });
+    saveRecurringRules();
+    document.getElementById('recurringAmount').value = '';
+    document.getElementById('recurringDay').value = '';
+    document.getElementById('recurringNote').value = '';
+    renderRecurring();
+    showToast('Recurring rule added.');
+}
+
+function renderRecurring() {
+    setRecurringType(_recurringType);
+    setRecurringAccount(_recurringAccount);
+    const list = document.getElementById('recurringList');
+    const rules = recurringRules.filter(r => r.active !== false);
+    list.innerHTML = rules.length ? rules.map(rule => `
+      <div class="tx-item" data-type="${rule.type}">
+        <div class="tx-icon ${rule.type}">${CAT_EMOJI[rule.category] || '↻'}</div>
+        <div class="tx-info">
+          <div class="tx-category">${rule.category} <span class="tx-acct-badge tx-acct-${rule.account}">${rule.account === 'cash' ? '💵' : '💳'}</span></div>
+          <div class="tx-note">${rule.note || 'Monthly'} · day ${rule.day}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="tx-amount ${rule.type}">${rule.type === 'income' ? '+' : '-'}${fmt(rule.amount)}</div>
+          <button class="link-btn" onclick="deleteRecurringRule('${rule.id}')">Delete</button>
+        </div>
+      </div>`).join('') : emptyStateHTML('autorenew', 'No recurring rules yet.');
+}
+
+function deleteRecurringRule(id) {
+    recurringRules = recurringRules.filter(r => r.id !== id);
+    saveRecurringRules();
+    renderRecurring();
+    showToast('Recurring rule deleted.');
+}
+
+async function runDueRecurring(manual = false) {
+    const today = new Date();
+    const month = todayISO().slice(0, 7);
+    const day = today.getDate();
+    const due = recurringRules.filter(r => r.active !== false && r.lastRunMonth !== month && day >= r.day);
+    if (!due.length) {
+        if (manual) showToast('No recurring transactions due.');
+        return;
+    }
+
+    let created = 0;
+    for (const rule of due) {
+        const date = `${month}-${String(Math.min(rule.day, 28)).padStart(2, '0')}`;
+        const tx = {
+            type: rule.type,
+            amount: rule.amount,
+            category: rule.category,
+            date,
+            note: rule.note || 'Recurring',
+            account: rule.account || 'cash',
+            recurringId: rule.id
+        };
+
+        try {
+            const txRef = window.fbCollection(window.db, 'transactions');
+            await window.fbAddDoc(txRef, tx);
+        } catch (err) {
+            const localTx = { id: uid(), ...tx };
+            transactions = [localTx, ...transactions];
+            localStorage.setItem('fintrack_cache_transactions', JSON.stringify(transactions));
+        }
+        applyTxEffect(tx.type, tx.amount, tx.account);
+        rule.lastRunMonth = month;
+        created++;
+    }
+
+    saveRecurringRules();
+    scheduleRefresh();
+    if (activePage === 'recurring') renderRecurring();
+    showToast(`Created ${created} recurring transaction${created !== 1 ? 's' : ''}.`);
+}
+
+function restoreBackupFromFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+        try {
+            const backup = JSON.parse(reader.result);
+            if (!backup || typeof backup !== 'object') throw new Error('Invalid backup');
+
+            if (Array.isArray(backup.transactions)) {
+                transactions = backup.transactions;
+                localStorage.setItem('fintrack_cache_transactions', JSON.stringify(transactions));
+            }
+            if (backup.accountBases && typeof backup.accountBases === 'object') {
+                accountBases = {
+                    cash: Number(backup.accountBases.cash || 0),
+                    card: Number(backup.accountBases.card || 0)
+                };
+                saveAccountBases();
+            }
+            if (Array.isArray(backup.loans)) {
+                loans = backup.loans;
+                localStorage.setItem(LOANS_KEY, JSON.stringify(loans));
+            }
+            if ('savingsGoal' in backup) {
+                savingsGoal = backup.savingsGoal;
+                if (savingsGoal) localStorage.setItem(GOAL_KEY, JSON.stringify(savingsGoal));
+                else localStorage.removeItem(GOAL_KEY);
+            }
+            if (backup.monthlyBudgets && typeof backup.monthlyBudgets === 'object') {
+                monthlyBudgets = backup.monthlyBudgets;
+                saveBudgets();
+            }
+            if (Array.isArray(backup.recurringRules)) {
+                recurringRules = backup.recurringRules;
+                saveRecurringRules();
+            }
+
+            refreshAll();
+            renderLoans();
+            if (activePage === 'budgets') renderBudgets();
+            if (activePage === 'recurring') renderRecurring();
+            if (activePage === 'history') renderHistory();
+            showToast('Backup restored locally.');
+        } catch (err) {
+            console.error('Restore failed:', err);
+            showToast('Could not restore backup file.');
+        }
+    };
+    reader.readAsText(file);
+}
+
 let _calInitDone = false;
 let _calViewYear, _calViewMonth;
 
@@ -929,7 +1196,7 @@ function getStatsTxs() {
 
 function renderDonutChart(type, canvasId, totalId, legendId, instanceVarName) {
     const txs = getStatsTxs();
-    const filtered = txs.filter(t => t.type === type);
+    const filtered = txs.filter(t => t.type === type && !isReferenceTx(t));
     const byCategory = {};
     filtered.forEach(t => { byCategory[t.category] = (byCategory[t.category] || 0) + t.amount; });
     
@@ -1043,7 +1310,7 @@ function renderBarChart() {
     const incomes = Array(12).fill(0);
     const expenses = Array(12).fill(0);
     visibleTxs()
-        .filter(t => t.date.startsWith(year))
+        .filter(t => t.date.startsWith(year) && !isReferenceTx(t))
         .forEach(t => {
             const mo = parseInt(t.date.slice(5, 7)) - 1;
             if (t.type === 'income') incomes[mo] += t.amount;
@@ -1144,25 +1411,41 @@ function loadChartJS(cb) {
 
 /* ── Helpers ─────────────────────────────────── */
 function txHTML(t) {
-    const emoji = CAT_EMOJI[t.category] || '💳';
+    const isAdjustment = !!t.isAdjustment || t.category === 'Ecart';
+    const isTransfer = !!t.isTransfer || t.category === 'Transfer';
+    const isReference = isAdjustment || isTransfer;
+    const emoji = isAdjustment ? '⚖️' : (isTransfer ? '⇄' : (CAT_EMOJI[t.category] || '💳'));
     const acct = t.account || 'card';
     const acctBadge = activeAccount === 'all'
         ? `<span class="tx-acct-badge tx-acct-${acct}">${acct === 'cash' ? '💵' : '💳'}</span>`
         : '';
+    const adjustmentDelta = typeof t.adjustmentDelta === 'number'
+        ? t.adjustmentDelta
+        : (t.type === 'expense' ? -t.amount : t.amount);
+    const signedAmount = isAdjustment
+        ? (adjustmentDelta >= 0 ? '+' : '-') + fmt(Math.abs(adjustmentDelta))
+        : (isTransfer ? fmt(t.amount) : `${t.type === 'income' ? '+' : '-'}${fmt(t.amount)}`);
+    const amountClass = isAdjustment
+        ? (adjustmentDelta >= 0 ? 'income' : 'expense')
+        : (isTransfer ? 'transfer' : t.type);
+    const categoryLabel = isAdjustment ? 'Ecart' : (isTransfer ? 'Transfer' : t.category);
     return `
-    <div class="tx-item" data-id="${t.id}" data-type="${t.type}">
-      <div class="tx-icon ${t.type}">${emoji}</div>
+    <div class="tx-item" data-id="${t.id}" data-type="${amountClass}" data-reference="${isReference ? 'true' : 'false'}">
+      <div class="tx-icon ${amountClass}">${emoji}</div>
       <div class="tx-info">
-        <div class="tx-category">${t.category} ${acctBadge}</div>
+        <div class="tx-category">${categoryLabel} ${acctBadge}</div>
         <div class="tx-note">${t.note || dateLabel(t.date)}</div>
       </div>
       <div style="text-align: right;">
-        <div class="tx-amount ${t.type}">${t.type === 'income' ? '+' : '-'}${fmt(t.amount)}</div>
+        <div class="tx-amount ${amountClass}">${signedAmount}</div>
         <div class="tx-date">${dateLabel(t.date)}</div>
       </div>
     </div>`;
 }
 
+function referenceHTML(t) {
+    return txHTML(t);
+}
 
 function emptyStateHTML(icon, msg) {
     return `<div class="empty-state"><span class="material-symbols-rounded">${icon}</span><p>${msg}</p></div>`;
@@ -1209,9 +1492,9 @@ function init() {
     document.getElementById('deleteBtn').addEventListener('click', deleteTransaction);
 
     // Type tabs
-    document.querySelectorAll('.type-tab').forEach(tab => {
+    document.querySelectorAll('#modal .type-tab[data-type]').forEach(tab => {
         tab.addEventListener('click', () => {
-            document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#modal .type-tab[data-type]').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             buildCategorySelect(tab.dataset.type, '');
         });
@@ -1219,8 +1502,8 @@ function init() {
 
     // Filters
     document.getElementById('searchInput').addEventListener('input', applyFilters);
-    document.getElementById('filterCategory').addEventListener('change', applyFilters);
-    document.getElementById('filterMonth').addEventListener('change', applyFilters);
+    document.getElementById('filterCategory')?.addEventListener('change', applyFilters);
+    document.getElementById('filterMonth')?.addEventListener('change', applyFilters);
     // Type filter chips (All / Income / Expense)
     document.querySelectorAll('.chip:not(.acct-chip)').forEach(chip => {
         chip.addEventListener('click', () => {
@@ -1246,8 +1529,7 @@ function init() {
 
     // Stats month change
     document.getElementById('statsMonth').addEventListener('change', () => {
-        renderDonutChart();
-        renderStatsGrid();
+        renderStats();
     });
 
     // Loan modal
@@ -1272,6 +1554,8 @@ function init() {
     renderLoans();
 
     // Transfer modal
+    document.getElementById('transferBtnTop').addEventListener('click', openTransferModal);
+    document.getElementById('transferDashboardBtn').addEventListener('click', openTransferModal);
     document.getElementById('transferNavBtn').addEventListener('click', openTransferModal);
     document.getElementById('closeTransferBtn').addEventListener('click', closeTransferModal);
     document.getElementById('transferBackdrop').addEventListener('click', e => {
@@ -1280,6 +1564,32 @@ function init() {
     document.getElementById('transferFromCash').addEventListener('click', () => setTransferFrom('cash'));
     document.getElementById('transferFromCard').addEventListener('click', () => setTransferFrom('card'));
     document.getElementById('confirmTransferBtn').addEventListener('click', doTransfer);
+
+    // Balance adjustment / ecart modal
+    document.getElementById('adjustDashboardBtn').addEventListener('click', () => openBalanceAdjustModal());
+    document.getElementById('closeAdjustBtn').addEventListener('click', closeBalanceAdjustModal);
+    document.getElementById('adjustBackdrop').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeBalanceAdjustModal();
+    });
+    document.getElementById('adjustCash').addEventListener('click', () => setAdjustAccount('cash'));
+    document.getElementById('adjustCard').addEventListener('click', () => setAdjustAccount('card'));
+    document.getElementById('adjustNewBalance').addEventListener('input', updateAdjustPreview);
+    document.getElementById('confirmAdjustBtn').addEventListener('click', doBalanceAdjust);
+
+    // Budgets, recurring rules, and backup restore
+    document.getElementById('saveBudgetBtn').addEventListener('click', saveBudgetFromForm);
+    document.getElementById('saveRecurringBtn').addEventListener('click', saveRecurringFromForm);
+    document.getElementById('runRecurringBtn').addEventListener('click', () => runDueRecurring(true));
+    document.getElementById('recurringExpenseTab').addEventListener('click', () => setRecurringType('expense'));
+    document.getElementById('recurringIncomeTab').addEventListener('click', () => setRecurringType('income'));
+    document.getElementById('recurringCash').addEventListener('click', () => setRecurringAccount('cash'));
+    document.getElementById('recurringCard').addEventListener('click', () => setRecurringAccount('card'));
+    document.getElementById('restoreBackupBtn').addEventListener('click', () => document.getElementById('restoreBackupInput').click());
+    document.getElementById('restoreBackupInput').addEventListener('change', restoreBackupFromFile);
+    populateBudgetCategorySelect();
+    setRecurringType('expense');
+    setRecurringAccount('cash');
+    setTimeout(() => runDueRecurring(false), 1200);
 }
 
 document.addEventListener('DOMContentLoaded', init);
@@ -1290,12 +1600,11 @@ document.addEventListener('DOMContentLoaded', init);
 let _transferFrom = 'cash';
 
 function openTransferModal() {
-    _transferFrom = 'cash';
-    document.getElementById('transferFromCash').classList.add('active');
-    document.getElementById('transferFromCard').classList.remove('active');
-    document.getElementById('transferToLabel').textContent = '💳 Card';
+    const startAccount = activeAccount === 'card' ? 'card' : 'cash';
+    setTransferFrom(startAccount);
     document.getElementById('transferAmount').value = '';
     document.getElementById('transferBackdrop').classList.add('show');
+    setTimeout(() => document.getElementById('transferAmount').focus(), 150);
     closeSidebar();
 }
 
@@ -1307,21 +1616,138 @@ function setTransferFrom(from) {
     _transferFrom = from;
     document.getElementById('transferFromCash').classList.toggle('active', from === 'cash');
     document.getElementById('transferFromCard').classList.toggle('active', from === 'card');
-    document.getElementById('transferToLabel').textContent = from === 'cash' ? '💳 Card' : '💵 Cash';
+    document.getElementById('transferToLabel').textContent = from === 'cash' ? 'Card' : 'Cash';
 }
 
 function doTransfer() {
-    const amount = parseFloat(document.getElementById('transferAmount').value);
-    if (!amount || amount <= 0) { showToast('Enter a valid amount.'); return; }
+    const amount = Math.round(parseFloat(document.getElementById('transferAmount').value) * 100) / 100;
+    if (!Number.isFinite(amount) || amount <= 0) { showToast('Enter a valid amount.'); return; }
     const from = _transferFrom;
     const to = from === 'cash' ? 'card' : 'cash';
-    if (accountBases[from] < amount) { showToast('Insufficient balance.'); return; }
-    accountBases[from] -= amount;
-    accountBases[to] += amount;
+    if ((accountBases[from] || 0) < amount) { showToast('Insufficient balance.'); return; }
+    accountBases[from] = Math.round(((accountBases[from] || 0) - amount) * 100) / 100;
+    accountBases[to] = Math.round(((accountBases[to] || 0) + amount) * 100) / 100;
     saveAccountBases();
+    const transferTx = {
+        type: 'expense',
+        amount,
+        category: 'Transfer',
+        date: todayISO(),
+        note: `${from === 'cash' ? 'Cash' : 'Card'} to ${to === 'cash' ? 'Cash' : 'Card'}`,
+        account: from,
+        transferTo: to,
+        isTransfer: true
+    };
+    try {
+        const txRef = window.fbCollection(window.db, 'transactions');
+        window.fbAddDoc(txRef, transferTx).catch(err => {
+            console.error('Error saving transfer reference:', err);
+            const localTransfer = { id: uid(), ...transferTx };
+            transactions = [localTransfer, ...transactions];
+            localStorage.setItem('fintrack_cache_transactions', JSON.stringify(transactions));
+            scheduleRefresh();
+        });
+    } catch (err) {
+        const localTransfer = { id: uid(), ...transferTx };
+        transactions = [localTransfer, ...transactions];
+        localStorage.setItem('fintrack_cache_transactions', JSON.stringify(transactions));
+    }
     closeTransferModal();
     scheduleRefresh();
-    showToast(`Transferred ${fmt(amount)} from ${from} to ${to}.`);
+    syncToSheet("TRANSFER", { transfer: { from, to, amount, date: todayISO() } });
+    showToast(`Transferred ${fmt(amount)} from ${from === 'cash' ? 'Cash' : 'Card'} to ${to === 'cash' ? 'Cash' : 'Card'}.`);
+}
+
+/* ═══════════════════════════════════════════════
+   BALANCE ADJUSTMENT / ECART
+═══════════════════════════════════════════════ */
+let _adjustAccount = 'cash';
+
+function openBalanceAdjustModal(account = null) {
+    const startAccount = account || (activeAccount === 'card' ? 'card' : 'cash');
+    setAdjustAccount(startAccount);
+    document.getElementById('adjustNewBalance').value = '';
+    updateAdjustPreview();
+    document.getElementById('adjustBackdrop').classList.add('show');
+    setTimeout(() => document.getElementById('adjustNewBalance').focus(), 150);
+    closeSidebar();
+}
+
+function closeBalanceAdjustModal() {
+    document.getElementById('adjustBackdrop').classList.remove('show');
+}
+
+function setAdjustAccount(account) {
+    _adjustAccount = account;
+    document.getElementById('adjustCash').classList.toggle('active', account === 'cash');
+    document.getElementById('adjustCard').classList.toggle('active', account === 'card');
+    document.getElementById('adjustCurrentBalance').textContent = fmt(accountBases[account] || 0);
+    updateAdjustPreview();
+}
+
+function updateAdjustPreview() {
+    const input = document.getElementById('adjustNewBalance');
+    const preview = document.getElementById('adjustDifference');
+    const newBalance = Math.round(parseFloat(input.value) * 100) / 100;
+    const current = accountBases[_adjustAccount] || 0;
+
+    if (!Number.isFinite(newBalance)) {
+        preview.textContent = 'Ecart: ' + fmt(0);
+        preview.style.color = 'var(--text-dim)';
+        return;
+    }
+
+    const difference = Math.round((newBalance - current) * 100) / 100;
+    preview.textContent = 'Ecart: ' + fmtSigned(difference);
+    preview.style.color = difference > 0 ? 'var(--green)' : (difference < 0 ? 'var(--red)' : 'var(--text-dim)');
+}
+
+async function doBalanceAdjust() {
+    const newBalance = Math.round(parseFloat(document.getElementById('adjustNewBalance').value) * 100) / 100;
+    if (!Number.isFinite(newBalance) || newBalance < 0) {
+        showToast('Enter a valid new solde.');
+        return;
+    }
+
+    const account = _adjustAccount;
+    const oldBalance = Math.round((accountBases[account] || 0) * 100) / 100;
+    const difference = Math.round((newBalance - oldBalance) * 100) / 100;
+
+    accountBases[account] = newBalance;
+    saveAccountBases();
+
+    if (difference !== 0) {
+        const adjustmentTx = {
+            type: difference > 0 ? 'income' : 'expense',
+            amount: Math.abs(difference),
+            category: 'Ecart',
+            date: todayISO(),
+            note: `${account === 'cash' ? 'Cash' : 'Card'} solde adjusted from ${fmt(oldBalance)} to ${fmt(newBalance)}`,
+            account,
+            isAdjustment: true,
+            adjustmentDelta: difference,
+            oldBalance,
+            newBalance
+        };
+
+        try {
+            const txRef = window.fbCollection(window.db, 'transactions');
+            const docRef = await window.fbAddDoc(txRef, adjustmentTx);
+            syncToSheet("ECART", { adjustment: { id: docRef.id, account, oldBalance, newBalance, difference, date: todayISO() } });
+        } catch (err) {
+            console.error('Error saving ecart reference:', err);
+            const localAdjustment = { id: uid(), ...adjustmentTx };
+            transactions = [localAdjustment, ...transactions];
+            localStorage.setItem('fintrack_cache_transactions', JSON.stringify(transactions));
+            showToast('Solde updated. Ecart saved locally.');
+        }
+    } else {
+        syncToSheet("ECART", { adjustment: { account, oldBalance, newBalance, difference, date: todayISO() } });
+    }
+
+    closeBalanceAdjustModal();
+    scheduleRefresh();
+    showToast(`${account === 'cash' ? 'Cash' : 'Card'} solde set to ${fmt(newBalance)}.`);
 }
 
 

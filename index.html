@@ -12,7 +12,7 @@
   <title>FinTrack – Personal Finance</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=5" />
+  <link rel="stylesheet" href="style.css?v=6" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
@@ -86,6 +86,18 @@
         <span class="material-symbols-rounded">bar_chart</span>
         <span>Statistics</span>
       </a>
+      <a href="#" class="nav-item" data-page="budgets" id="nav-budgets">
+        <span class="material-symbols-rounded">savings</span>
+        <span>Budgets</span>
+      </a>
+      <a href="#" class="nav-item" data-page="recurring" id="nav-recurring">
+        <span class="material-symbols-rounded">autorenew</span>
+        <span>Automation</span>
+      </a>
+      <a href="#" class="nav-item" data-page="history" id="nav-history">
+        <span class="material-symbols-rounded">history</span>
+        <span>History</span>
+      </a>
     </nav>
     <div class="sidebar-import">
       <div class="sidebar-section-label">Tools</div>
@@ -101,6 +113,11 @@
         <span class="material-symbols-rounded">download</span>
         <span>Export JSON Backup</span>
       </button>
+      <button class="import-nav-btn" id="restoreBackupBtn">
+        <span class="material-symbols-rounded">restore_page</span>
+        <span>Restore JSON Backup</span>
+      </button>
+      <input type="file" id="restoreBackupInput" accept=".json,application/json" style="display:none;" />
       <button class="import-nav-btn" id="bgNavBtn">
         <span class="material-symbols-rounded">wallpaper</span>
         <span>Change Background</span>
@@ -143,6 +160,9 @@
         <span class="material-symbols-rounded">menu</span>
       </button>
       <h1 class="page-title" id="pageTitle">Dashboard</h1>
+      <button class="add-btn" id="transferBtnTop" type="button" aria-label="Transfer money" onclick="openTransferModal()">
+        <span class="material-symbols-rounded">sync_alt</span>
+      </button>
       <button class="add-btn" id="addBtnTop" aria-label="Add transaction">
         <span class="material-symbols-rounded">add</span>
       </button>
@@ -163,6 +183,12 @@
           </button>
           <button class="acct-tab" data-account="card" onclick="setActiveAccount('card')">
             💳 Card
+          </button>
+          <button class="acct-tab" id="transferDashboardBtn" type="button" onclick="openTransferModal()">
+            <span class="material-symbols-rounded">sync_alt</span> Transfer
+          </button>
+          <button class="acct-tab" id="adjustDashboardBtn" type="button" onclick="openBalanceAdjustModal()">
+            <span class="material-symbols-rounded">balance</span> Ecart
           </button>
         </div>
 
@@ -268,7 +294,10 @@
         <div class="transaction-total-bar" id="transactionTotalBar">
           <span class="total-label">Total for period:</span>
           <span class="total-value" id="transactionTotalAmount">€0.00</span>
-          <button class="link-btn" id="transferNavBtn" style="margin-left:auto;">⇄ Transfer</button>
+          <button class="link-btn" id="transferNavBtn" type="button" style="margin-left:auto;" onclick="openTransferModal()">
+            <span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;">sync_alt</span>
+            Transfer
+          </button>
         </div>
         <div class="filters-bar">
           <div class="search-wrap">
@@ -378,6 +407,81 @@
             <h2 class="section-title">Income vs Expenses</h2>
           </div>
           <div class="stats-grid" id="statsGrid"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-budgets">
+        <div class="section-block">
+          <div class="section-header">
+            <h2 class="section-title">Monthly Budgets</h2>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="budgetCategory">Category</label>
+            <select id="budgetCategory" class="form-input"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="budgetLimit">Monthly Limit</label>
+            <input type="number" id="budgetLimit" class="form-input" placeholder="0.00" min="0" step="0.01" />
+          </div>
+          <button class="btn btn--primary" id="saveBudgetBtn" style="width:100%;">Save Budget</button>
+        </div>
+        <div class="section-block">
+          <div class="section-header">
+            <h2 class="section-title">This Month</h2>
+          </div>
+          <div class="transaction-list" id="budgetList"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-recurring">
+        <div class="section-block">
+          <div class="section-header">
+            <h2 class="section-title">Recurring Transactions</h2>
+          </div>
+          <div class="type-tabs" style="margin-bottom:16px;">
+            <button class="type-tab active" id="recurringExpenseTab" type="button">Expense</button>
+            <button class="type-tab" id="recurringIncomeTab" type="button">Income</button>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="recurringAmount">Amount</label>
+            <input type="number" id="recurringAmount" class="form-input" placeholder="0.00" min="0.01" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="recurringCategory">Category</label>
+            <select id="recurringCategory" class="form-input"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Account</label>
+            <div style="display:flex;gap:10px;">
+              <button class="type-tab active" id="recurringCash" type="button">💵 Cash</button>
+              <button class="type-tab" id="recurringCard" type="button">💳 Card</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="recurringDay">Day of Month</label>
+            <input type="number" id="recurringDay" class="form-input" placeholder="1-28" min="1" max="28" step="1" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="recurringNote">Note</label>
+            <input type="text" id="recurringNote" class="form-input" placeholder="e.g. Rent, Salary, Internet" maxlength="80" />
+          </div>
+          <button class="btn btn--primary" id="saveRecurringBtn" style="width:100%;">Add Recurring</button>
+        </div>
+        <div class="section-block">
+          <div class="section-header">
+            <h2 class="section-title">Saved Rules</h2>
+            <button class="link-btn" id="runRecurringBtn">Run Due</button>
+          </div>
+          <div class="transaction-list" id="recurringList"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-history">
+        <div class="section-block">
+          <div class="section-header">
+            <h2 class="section-title">Transfer & Ecart History</h2>
+          </div>
+          <div class="transaction-list" id="historyList"></div>
         </div>
       </section>
 
@@ -709,6 +813,39 @@
     </div>
   </div>
 
+  <!-- MODAL: Balance Adjustment / Ecart -->
+  <div class="modal-backdrop" id="adjustBackdrop">
+    <div class="modal" id="adjustModal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h2 class="modal-title">Ecart / New Solde</h2>
+        <button class="modal-close" id="closeAdjustBtn" aria-label="Close">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+      <div class="modal-body" style="padding: 24px;">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label">Account</label>
+          <div style="display:flex;gap:10px;">
+            <button class="type-tab active" id="adjustCash" type="button">💵 Cash</button>
+            <button class="type-tab" id="adjustCard" type="button">💳 Card</button>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label">Current Solde</label>
+          <div id="adjustCurrentBalance" style="font-weight:700;font-size:1.15rem;">€0.00</div>
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" for="adjustNewBalance">New Solde</label>
+          <input type="number" id="adjustNewBalance" class="form-input" placeholder="0.00" min="0" step="0.01" />
+        </div>
+        <div id="adjustDifference" style="margin-bottom: 24px;font-weight:700;color:var(--text-dim);">
+          Ecart: €0.00
+        </div>
+        <button class="btn btn--primary" id="confirmAdjustBtn" style="width:100%;">Set New Solde</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: Custom Category -->
   <div class="modal-backdrop" id="customCatBackdrop">
     <div class="modal" id="customCatModal" role="dialog" aria-modal="true">
@@ -862,6 +999,8 @@
            accountBases: JSON.parse(localStorage.getItem('fintrack_account_bases_v3') || '{}'),
            loans: JSON.parse(localStorage.getItem('fintrack_loans') || '[]'),
            savingsGoal: JSON.parse(localStorage.getItem('fintrack_savings_goal') || 'null'),
+           monthlyBudgets: JSON.parse(localStorage.getItem('fintrack_monthly_budgets') || '{}'),
+           recurringRules: JSON.parse(localStorage.getItem('fintrack_recurring_rules') || '[]'),
            exportedAt: new Date().toISOString()
        };
        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
@@ -876,7 +1015,7 @@
   </script>
 
   <!-- App Script -->
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=10"></script>
 </body>
 
 </html>
