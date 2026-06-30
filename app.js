@@ -101,6 +101,7 @@ let recurringRules = JSON.parse(localStorage.getItem(RECURRING_KEY) || '[]');
 
 // ── Debounced render ─────────────────────────
 let _refreshTimer = null;
+let _animationTimer = null;
 function scheduleRefresh() {
     if (_refreshTimer) clearTimeout(_refreshTimer);
     _refreshTimer = setTimeout(() => { refreshAll(); }, 120);
@@ -243,7 +244,7 @@ function showPage(id) {
     document.getElementById('page-' + id).classList.add('active');
     const nav = document.getElementById('nav-' + id);
     if (nav) nav.classList.add('active');
-    const titles = { dashboard: 'Dashboard', transactions: 'Transactions', loans: 'Loans', stats: 'Statistics', budgets: 'Budgets', recurring: 'Automation', history: 'History' };
+    const titles = { dashboard: 'Dashboard', transactions: 'Transactions', loans: 'Loans', investments: 'Investments', stats: 'Statistics', budgets: 'Budgets', recurring: 'Automation', history: 'History' };
     document.getElementById('pageTitle').textContent = titles[id] || id;
     closeSidebar();
     if (id === 'dashboard') renderDashboard();
@@ -252,9 +253,10 @@ function showPage(id) {
     if (id === 'budgets') renderBudgets();
     if (id === 'recurring') renderRecurring();
     if (id === 'history') renderHistory();
+    if (id === 'investments') renderInvestments();
     
     // Antigravity Transition
-    initAntigravityAnimations();
+    initAntigravityAnimations(true);
 }
 
 /* ── Sidebar ─────────────────────────────────── */
@@ -440,39 +442,46 @@ function refreshAll() {
     else if (activePage === 'budgets') renderBudgets();
     else if (activePage === 'recurring') renderRecurring();
     else if (activePage === 'history') renderHistory();
+    else if (activePage === 'investments') renderInvestments();
+
+    // Always refresh the dashboard investments widget regardless of active page
+    renderDashboardInvestments();
     
     // Only animate if we actually changed something meaningful 
     // and wait a moment for the browser to settle.
-    if (_refreshTimer) clearTimeout(_refreshTimer);
-    _refreshTimer = setTimeout(() => { initAntigravityAnimations(); }, 300);
+    if (_animationTimer) clearTimeout(_animationTimer);
+    _animationTimer = setTimeout(() => { initAntigravityAnimations(); }, 300);
 }
 
 /* ── Antigravity Animations ─────────────────── */
-function initAntigravityAnimations() {
+function initAntigravityAnimations(isPageTransition = false) {
     if (typeof gsap === 'undefined') return;
 
-    // Staggered entrance: only animate items currently in the viewport
-    // or keep the stagger brief to avoid heavy CPU load.
-    gsap.fromTo('.card, .section-block', 
-        { opacity: 0, y: 20, scale: 0.98 }, 
-        { opacity: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.05, ease: "power2.out", clearProps: "all" }
-    );
+    // Only run entrance animations on page transitions
+    if (isPageTransition) {
+        gsap.killTweensOf('.card, .section-block');
+        gsap.fromTo('.card, .section-block', 
+            { opacity: 0, y: 20, scale: 0.98 }, 
+            { opacity: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.05, ease: "power2.out", clearProps: "all" }
+        );
 
-    // Only animate the first few transaction items for initial "wow" effect
-    // without killing mobile performance.
-    gsap.fromTo('.tx-item', 
-        { opacity: 0, x: -10 }, 
-        { opacity: 1, x: 0, duration: 0.4, stagger: 0.02, ease: "power1.out", clearProps: "all" }
-    ).delay(0.2);
+        gsap.killTweensOf('.tx-item');
+        gsap.fromTo('.tx-item:nth-child(-n+15)', 
+            { opacity: 0, x: -10 }, 
+            { opacity: 1, x: 0, duration: 0.4, stagger: 0.02, ease: "power1.out", clearProps: "all" }
+        ).delay(0.2);
+    }
 
-    // Subtle floating for balance card
-    gsap.to('.card--balance', {
-        y: -5,
-        duration: 3,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut"
-    });
+    // Floating animation (ensure only one is active)
+    if (!gsap.isTweening('.card--balance')) {
+        gsap.to('.card--balance', {
+            y: -5,
+            duration: 3,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut"
+        });
+    }
 }
 
 
@@ -1864,7 +1873,351 @@ function renderLoans() {
 }
 
 /* ═══════════════════════════════════════════════
-   EXCEL / CSV IMPORT FEATURE
+   INVESTMENTS — CAPITAL TRACKING
+═══════════════════════════════════════════════ */
+const INVESTMENTS_KEY = 'fintrack_investments';
+var investments = JSON.parse(localStorage.getItem(INVESTMENTS_KEY) || '[]');
+
+const INVEST_TYPE_EMOJI = {
+    crypto: '₿',
+    stock: '📊',
+    gold: '🥇',
+    real_estate: '🏠',
+    business: '📦',
+    other: '💰',
+};
+
+let _investFromAcct = 'cash';
+let _sellToAcct = 'cash';
+
+/* ── Open / Close modals ─────────────────────── */
+function openInvestmentModal() {
+    _investFromAcct = 'cash';
+    document.getElementById('investFromCash').classList.add('active');
+    document.getElementById('investFromCard').classList.remove('active');
+    document.getElementById('investName').value = '';
+    document.getElementById('investType').value = 'crypto';
+    document.getElementById('investAmount').value = '';
+    document.getElementById('investDate').value = todayISO();
+    document.getElementById('investNote').value = '';
+    document.getElementById('investmentBackdrop').classList.add('show');
+    setTimeout(() => document.getElementById('investName').focus(), 200);
+}
+
+function closeInvestmentModal() {
+    document.getElementById('investmentBackdrop').classList.remove('show');
+}
+
+/* ── Save new investment ────────────────────── */
+async function saveInvestment() {
+    const name = document.getElementById('investName').value.trim();
+    const type = document.getElementById('investType').value;
+    const amount = parseFloat(document.getElementById('investAmount').value);
+    const date = document.getElementById('investDate').value;
+    const note = document.getElementById('investNote').value.trim();
+
+    if (!name) { showToast('Enter an asset name'); return; }
+    if (!amount || amount <= 0) { showToast('Enter a valid amount'); return; }
+    if (!date) { showToast('Pick a date'); return; }
+
+    const data = {
+        name, type, amount,
+        currentValue: amount, // starts at cost basis
+        account: _investFromAcct,
+        date, note,
+        status: 'active',
+        createdAt: new Date().toISOString(),
+    };
+
+    try {
+        const ref = window.fbCollection(window.db, 'investments');
+        await window.fbAddDoc(ref, data);
+        // Deduct from account balance (money is now invested, not available)
+        accountBases[_investFromAcct] -= amount;
+        saveAccountBases();
+        closeInvestmentModal();
+        scheduleRefresh();
+        showToast(`Invested ${fmt(amount)} in ${name} ✓`);
+    } catch (err) {
+        console.error('Error saving investment:', err);
+        showToast('Error saving investment — check connection');
+    }
+}
+
+/* ── Update valuation modal ─────────────────── */
+function openUpdateValModal(id) {
+    const inv = investments.find(i => i.id === id);
+    if (!inv) return;
+    document.getElementById('updateValId').value = id;
+    document.getElementById('updateValTitle').textContent = `📊 ${inv.name}`;
+    document.getElementById('updateValOriginal').textContent = fmt(inv.amount);
+    document.getElementById('updateValAmount').value = inv.currentValue || inv.amount;
+    document.getElementById('updateValPreview').textContent = '';
+    document.getElementById('updateValBackdrop').classList.add('show');
+    setTimeout(() => document.getElementById('updateValAmount').focus(), 200);
+
+    // Live preview on input
+    const input = document.getElementById('updateValAmount');
+    const preview = document.getElementById('updateValPreview');
+    const handler = () => {
+        const val = parseFloat(input.value) || 0;
+        const profit = val - inv.amount;
+        const pct = inv.amount > 0 ? ((profit / inv.amount) * 100).toFixed(1) : 0;
+        const color = profit >= 0 ? 'var(--green)' : 'var(--red)';
+        preview.innerHTML = profit !== 0
+            ? `<span style="color:${color}">${profit >= 0 ? '+' : ''}${fmt(profit)} (${profit >= 0 ? '+' : ''}${pct}%)</span>`
+            : '';
+    };
+    input.oninput = handler;
+    handler();
+}
+
+function closeUpdateValModal() {
+    document.getElementById('updateValBackdrop').classList.remove('show');
+    document.getElementById('updateValAmount').oninput = null;
+}
+
+async function saveValuation() {
+    const id = document.getElementById('updateValId').value;
+    const newVal = parseFloat(document.getElementById('updateValAmount').value);
+    if (isNaN(newVal) || newVal < 0) { showToast('Enter a valid valuation'); return; }
+    try {
+        const ref = window.fbDoc(window.db, 'investments', id);
+        await window.fbUpdateDoc(ref, { currentValue: newVal });
+        closeUpdateValModal();
+        showToast('Valuation updated ✓');
+    } catch (err) {
+        console.error('Error updating valuation:', err);
+        showToast('Error updating valuation — check connection');
+    }
+}
+
+/* ── Sell / Liquidate modal ──────────────────── */
+function openSellInvestModal(id) {
+    const inv = investments.find(i => i.id === id);
+    if (!inv) return;
+    _sellToAcct = inv.account || 'cash';
+
+    document.getElementById('sellInvestId').value = id;
+    document.getElementById('sellInvestTitle').textContent = `💸 Sell ${inv.name}`;
+    document.getElementById('sellOriginal').textContent = fmt(inv.amount);
+    document.getElementById('sellCurrentVal').textContent = fmt(inv.currentValue || inv.amount);
+    document.getElementById('sellAmount').value = inv.currentValue || inv.amount;
+    document.getElementById('sellToCash').classList.toggle('active', _sellToAcct === 'cash');
+    document.getElementById('sellToCard').classList.toggle('active', _sellToAcct === 'card');
+
+    // Live preview
+    const input = document.getElementById('sellAmount');
+    const preview = document.getElementById('sellPreview');
+    const handler = () => {
+        const val = parseFloat(input.value) || 0;
+        const profit = val - inv.amount;
+        const pct = inv.amount > 0 ? ((profit / inv.amount) * 100).toFixed(1) : 0;
+        const color = profit >= 0 ? 'var(--green)' : 'var(--red)';
+        preview.innerHTML = profit !== 0
+            ? `<span style="color:${color}">Return: ${profit >= 0 ? '+' : ''}${fmt(profit)} (${profit >= 0 ? '+' : ''}${pct}%)</span>`
+            : `<span style="opacity:0.5">Break even</span>`;
+    };
+    input.oninput = handler;
+    handler();
+
+    document.getElementById('sellInvestBackdrop').classList.add('show');
+    setTimeout(() => input.focus(), 200);
+}
+
+function closeSellInvestModal() {
+    document.getElementById('sellInvestBackdrop').classList.remove('show');
+    document.getElementById('sellAmount').oninput = null;
+}
+
+async function confirmSellInvestment() {
+    const id = document.getElementById('sellInvestId').value;
+    const sellPrice = parseFloat(document.getElementById('sellAmount').value);
+    const inv = investments.find(i => i.id === id);
+    if (!inv) return;
+    if (isNaN(sellPrice) || sellPrice < 0) { showToast('Enter a valid sale price'); return; }
+
+    const profit = sellPrice - inv.amount;
+    const pct = inv.amount > 0 ? ((profit / inv.amount) * 100).toFixed(1) : 0;
+
+    try {
+        const ref = window.fbDoc(window.db, 'investments', id);
+        await window.fbUpdateDoc(ref, {
+            status: 'sold',
+            soldAt: new Date().toISOString(),
+            salePrice: sellPrice,
+            finalProfit: profit,
+            finalRoiPct: parseFloat(pct),
+            returnToAccount: _sellToAcct,
+            currentValue: sellPrice,
+        });
+        // Credit sale proceeds back to selected account
+        accountBases[_sellToAcct] = (accountBases[_sellToAcct] || 0) + sellPrice;
+        saveAccountBases();
+        closeSellInvestModal();
+        scheduleRefresh();
+        const roiLabel = profit >= 0 ? `+${fmt(profit)} (+${pct}%)` : `${fmt(profit)} (${pct}%)`;
+        showToast(`${inv.name} sold for ${fmt(sellPrice)} · ROI: ${roiLabel}`);
+    } catch (err) {
+        console.error('Error selling investment:', err);
+        showToast('Error selling investment — check connection');
+    }
+}
+
+/* ── Delete / remove investment ──────────────── */
+async function deleteInvestment(id) {
+    const inv = investments.find(i => i.id === id);
+    if (!inv) return;
+
+    const restoreBalance = inv.status !== 'sold' &&
+        confirm(`Restore ${fmt(inv.amount)} back to ${inv.account}?\n\nCancel = remove record only (no balance change).`);
+
+    try {
+        const ref = window.fbDoc(window.db, 'investments', id);
+        await window.fbDeleteDoc(ref);
+        if (restoreBalance) {
+            accountBases[inv.account] = (accountBases[inv.account] || 0) + inv.amount;
+            saveAccountBases();
+        }
+        scheduleRefresh();
+        showToast(`Investment ${inv.name} removed.`);
+    } catch (err) {
+        console.error('Error deleting investment:', err);
+        showToast('Error removing investment — check connection');
+    }
+}
+
+/* ── Render helpers ──────────────────────────── */
+function investmentRowHTML(inv) {
+    const emoji = INVEST_TYPE_EMOJI[inv.type] || '💰';
+    const currentVal = inv.currentValue ?? inv.amount;
+    const profit = currentVal - inv.amount;
+    const pct = inv.amount > 0 ? ((profit / inv.amount) * 100).toFixed(1) : 0;
+    const profitColor = profit >= 0 ? 'var(--green)' : 'var(--red)';
+    const profitLabel = (profit >= 0 ? '+' : '') + fmt(profit) + ` (${profit >= 0 ? '+' : ''}${pct}%)`;
+    const acctBadge = inv.account === 'cash'
+        ? '<span style="font-size:0.7rem;opacity:0.6;">💵</span>'
+        : '<span style="font-size:0.7rem;opacity:0.6;">💳</span>';
+
+    return `
+    <div class="tx-item" style="align-items:flex-start; gap:12px;">
+      <div class="tx-icon" style="font-size:1.4rem; background: rgba(99,102,241,0.15); color: #818cf8;">${emoji}</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-weight:700; display:flex; align-items:center; gap:6px;">
+          ${inv.name} ${acctBadge}
+        </div>
+        <div style="font-size:0.78rem; opacity:0.55; margin-top:2px;">${inv.date}${inv.note ? ' · ' + inv.note : ''}</div>
+        <div style="display:flex; gap:8px; margin-top:6px; flex-wrap:wrap;">
+          <button class="link-btn" onclick="openUpdateValModal('${inv.id}')" style="font-size:0.8rem; padding:3px 8px; background:rgba(129,140,248,0.15); border-radius:6px; color:#818cf8;">
+            📊 Valuation
+          </button>
+          <button class="link-btn" onclick="openSellInvestModal('${inv.id}')" style="font-size:0.8rem; padding:3px 8px; background:rgba(16,249,162,0.12); border-radius:6px; color:var(--green);">
+            💸 Sell
+          </button>
+          <button class="link-btn" onclick="deleteInvestment('${inv.id}')" style="font-size:0.8rem; padding:3px 8px; background:rgba(255,62,108,0.1); border-radius:6px; color:var(--red);">
+            🗑
+          </button>
+        </div>
+      </div>
+      <div style="text-align:right; flex-shrink:0;">
+        <div style="font-weight:700; font-size:1rem;">${fmt(currentVal)}</div>
+        <div style="font-size:0.8rem; color:${profitColor}; font-weight:600; margin-top:2px;">${profitLabel}</div>
+        <div style="font-size:0.72rem; opacity:0.5; margin-top:1px;">cost ${fmt(inv.amount)}</div>
+      </div>
+    </div>`;
+}
+
+function closedInvestmentRowHTML(inv) {
+    const emoji = INVEST_TYPE_EMOJI[inv.type] || '💰';
+    const profit = inv.finalProfit ?? (inv.salePrice - inv.amount);
+    const pct = inv.finalRoiPct ?? (inv.amount > 0 ? ((profit / inv.amount) * 100).toFixed(1) : 0);
+    const profitColor = profit >= 0 ? 'var(--green)' : 'var(--red)';
+
+    return `
+    <div class="tx-item" style="align-items:center; gap:12px; opacity:0.75;">
+      <div class="tx-icon" style="font-size:1.3rem; background:rgba(255,255,255,0.05);">${emoji}</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-weight:600; text-decoration:line-through; opacity:0.7;">${inv.name}</div>
+        <div style="font-size:0.75rem; opacity:0.5;">${inv.date} → sold ${(inv.soldAt || '').slice(0, 10)}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-weight:700;">${fmt(inv.salePrice || 0)}</div>
+        <div style="font-size:0.8rem; color:${profitColor}; font-weight:600;">${profit >= 0 ? '+' : ''}${fmt(profit)} (${profit >= 0 ? '+' : ''}${pct}%)</div>
+      </div>
+      <button class="link-btn" onclick="deleteInvestment('${inv.id}')" style="color:var(--red); font-size:0.8rem; flex-shrink:0;">🗑</button>
+    </div>`;
+}
+
+/* ── Render Investments Page ─────────────────── */
+function renderInvestments() {
+    const active = investments.filter(i => i.status !== 'sold');
+    const closed = investments.filter(i => i.status === 'sold');
+
+    // Summary metrics
+    const totalInvested = active.reduce((s, i) => s + (i.amount || 0), 0);
+    const totalCurrent = active.reduce((s, i) => s + (i.currentValue ?? i.amount ?? 0), 0);
+    const totalProfit = totalCurrent - totalInvested;
+    const totalPct = totalInvested > 0 ? ((totalProfit / totalInvested) * 100).toFixed(2) : 0;
+    const profitColor = totalProfit >= 0 ? 'var(--green)' : 'var(--red)';
+
+    const elInvested = document.getElementById('totalInvested');
+    const elValue = document.getElementById('currentValue');
+    const elRoi = document.getElementById('totalRoi');
+    const elRoiPct = document.getElementById('totalRoiPct');
+    const roiCard = document.getElementById('totalRoiCard');
+
+    if (elInvested) elInvested.textContent = fmt(totalInvested);
+    if (elValue) elValue.textContent = fmt(totalCurrent);
+    if (elRoi) {
+        elRoi.textContent = (totalProfit >= 0 ? '+' : '') + fmt(totalProfit);
+        elRoi.style.color = profitColor;
+    }
+    if (elRoiPct) {
+        elRoiPct.textContent = `${totalProfit >= 0 ? '+' : ''}${totalPct}% ROI`;
+        elRoiPct.style.color = profitColor;
+    }
+    if (roiCard) {
+        roiCard.style.borderColor = totalProfit >= 0 ? 'rgba(16,249,162,0.25)' : 'rgba(255,62,108,0.18)';
+    }
+
+    // Active list
+    const activeList = document.getElementById('investmentsPageList');
+    if (activeList) {
+        activeList.innerHTML = active.length
+            ? active.map(investmentRowHTML).join('')
+            : emptyStateHTML('insights', 'No active investments.<br>Click <strong>+ Invest</strong> to start tracking!');
+    }
+
+    // Closed list
+    const closedList = document.getElementById('closedInvestmentsList');
+    if (closedList) {
+        closedList.innerHTML = closed.length
+            ? closed.map(closedInvestmentRowHTML).join('')
+            : emptyStateHTML('folder_zip', 'No sold investments yet.');
+    }
+}
+
+/* ── Dashboard investments widget ────────────── */
+function renderDashboardInvestments() {
+    const active = investments.filter(i => i.status !== 'sold');
+    const totalInvested = active.reduce((s, i) => s + (i.amount || 0), 0);
+    const totalCurrent = active.reduce((s, i) => s + (i.currentValue ?? i.amount ?? 0), 0);
+    const totalProfit = totalCurrent - totalInvested;
+
+    const profitColor = totalProfit >= 0 ? 'var(--green)' : 'var(--red)';
+    const el1 = document.getElementById('dashInvested');
+    const el2 = document.getElementById('dashInvestVal');
+    const el3 = document.getElementById('dashInvestRoi');
+
+    if (el1) el1.textContent = fmt(totalInvested);
+    if (el2) el2.textContent = fmt(totalCurrent);
+    if (el3) {
+        el3.textContent = (totalProfit >= 0 ? '+' : '') + fmt(totalProfit);
+        el3.style.color = profitColor;
+    }
+}
+
+
    Uses SheetJS (xlsx) loaded lazily from CDN.
 ═══════════════════════════════════════════════ */
 

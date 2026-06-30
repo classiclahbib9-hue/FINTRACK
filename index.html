@@ -82,6 +82,10 @@
         <span class="material-symbols-rounded">handshake</span>
         <span>Loans</span>
       </a>
+      <a href="#" class="nav-item" data-page="investments" id="nav-investments">
+        <span class="material-symbols-rounded">insights</span>
+        <span>Investments</span>
+      </a>
       <a href="#" class="nav-item" data-page="stats" id="nav-stats">
         <span class="material-symbols-rounded">bar_chart</span>
         <span>Statistics</span>
@@ -104,6 +108,10 @@
       <button class="import-nav-btn" id="addLoanSidebarBtn">
         <span class="material-symbols-rounded">handshake</span>
         <span>Lend Money</span>
+      </button>
+      <button class="import-nav-btn" id="addInvestmentSidebarBtn">
+        <span class="material-symbols-rounded">insights</span>
+        <span>Invest Money</span>
       </button>
       <button class="import-nav-btn" id="importNavBtn">
         <span class="material-symbols-rounded">upload_file</span>
@@ -249,6 +257,28 @@
           </div>
         </div>
 
+        <!-- Investments Overview -->
+        <div class="section-block" id="investmentsDashboardSection">
+          <div class="section-header">
+            <h2 class="section-title">📈 Investments Overview</h2>
+            <button class="link-btn" data-page="investments" id="investmentsDashLinkBtn" type="button">View all</button>
+          </div>
+          <div class="summary-cards" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom: 0;">
+            <div class="card" style="padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); text-align: center;">
+              <div style="font-size: 0.72rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Invested</div>
+              <div style="font-size: 1.1rem; font-weight: 700;" id="dashInvested">€0.00</div>
+            </div>
+            <div class="card" style="padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); text-align: center;">
+              <div style="font-size: 0.72rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Value</div>
+              <div style="font-size: 1.1rem; font-weight: 700;" id="dashInvestVal">€0.00</div>
+            </div>
+            <div class="card" style="padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); text-align: center;">
+              <div style="font-size: 0.72rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Profit / ROI</div>
+              <div style="font-size: 1.1rem; font-weight: 700;" id="dashInvestRoi">€0.00</div>
+            </div>
+          </div>
+        </div>
+
         <!-- Money Lent -->
         <div class="section-block" id="loansSection">
           <div class="section-header">
@@ -363,6 +393,53 @@
             <button class="link-btn" id="addLoanPageBtn">+ Lend</button>
           </div>
           <div id="loansPageList"></div>
+        </div>
+      </section>
+
+      <!-- INVESTMENTS PAGE -->
+      <section class="page" id="page-investments">
+        <!-- Summary Cards for Investments -->
+        <div class="summary-cards" style="margin-bottom: 20px;">
+          <div class="card card--balance" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%); border-color: rgba(99, 102, 241, 0.25);">
+            <div class="card-label">Invested Capital</div>
+            <div class="card-value" id="totalInvested">€0.00</div>
+            <div class="card-sub">Principal Amount</div>
+          </div>
+          <div class="card card--income" style="background: linear-gradient(135deg, rgba(16, 249, 162, 0.12) 0%, rgba(20, 184, 166, 0.12) 100%); border-color: rgba(16, 249, 162, 0.25);">
+            <div class="card-label">Current Value</div>
+            <div class="card-value" id="currentValue">€0.00</div>
+            <div class="card-sub">Total Assets Valuation</div>
+          </div>
+          <div class="card card--expense" id="totalRoiCard" style="background: linear-gradient(135deg, rgba(255, 62, 108, 0.08) 0%, rgba(249, 115, 22, 0.08) 100%); border-color: rgba(255, 62, 108, 0.18);">
+            <div class="card-label">Total Return</div>
+            <div class="card-value" id="totalRoi">€0.00</div>
+            <div class="card-sub" id="totalRoiPct">0.00% ROI</div>
+          </div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-header">
+            <h2 class="section-title">📈 Active Investments</h2>
+            <button class="link-btn" id="addInvestmentPageBtn" type="button">+ Invest</button>
+          </div>
+          <div id="investmentsPageList">
+            <div class="empty-state">
+              <span class="material-symbols-rounded">insights</span>
+              <p>No active investments.<br>Click <strong>+ Invest</strong> to start tracking!</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-block" style="margin-top: 20px;">
+          <div class="section-header">
+            <h2 class="section-title">💼 Closed / Sold Investments</h2>
+          </div>
+          <div id="closedInvestmentsList">
+            <div class="empty-state">
+              <span class="material-symbols-rounded">folder_zip</span>
+              <p>No sold investments yet.</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -782,6 +859,133 @@
     </div>
   </div>
 
+  <!-- MODAL: Add Investment -->
+  <div class="modal-backdrop" id="investmentBackdrop">
+    <div class="modal" id="investmentModal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h2 class="modal-title">📈 Invest Money</h2>
+        <button class="modal-close" id="closeInvestmentBtn" aria-label="Close">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+      <div class="modal-body" style="padding: 24px;">
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="investName">Asset / Investment Name</label>
+          <input type="text" id="investName" class="form-input" placeholder="e.g. Bitcoin, Gold, AAPL Stock" />
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="investType">Type</label>
+          <select id="investType" class="form-input">
+            <option value="crypto">Crypto</option>
+            <option value="stock">Stock</option>
+            <option value="gold">Gold / Commodities</option>
+            <option value="real_estate">Real Estate</option>
+            <option value="business">Business</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="investAmount">Amount Invested</label>
+          <div class="amount-wrap">
+            <span class="currency-symbol">€</span>
+            <input type="number" id="investAmount" class="form-input amount-input" placeholder="0.00" min="0.01" step="0.01" />
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">From Account</label>
+          <div style="display:flex;gap:10px;">
+            <button class="type-tab active" id="investFromCash" type="button">💵 Cash</button>
+            <button class="type-tab" id="investFromCard" type="button">💳 Card</button>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="investDate">Date</label>
+          <input type="date" id="investDate" class="form-input" />
+        </div>
+        <div class="form-group" style="margin-bottom:24px;">
+          <label class="form-label" for="investNote">Note <span class="optional">(optional)</span></label>
+          <input type="text" id="investNote" class="form-input" placeholder="e.g. 0.005 BTC at €50k" maxlength="120" />
+        </div>
+        <button class="btn btn--primary" id="confirmInvestmentBtn" style="width:100%;">
+          <span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">insights</span>
+          Confirm Investment
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Update Valuation -->
+  <div class="modal-backdrop" id="updateValBackdrop">
+    <div class="modal" id="updateValModal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h2 class="modal-title" id="updateValTitle">Update Valuation</h2>
+        <button class="modal-close" id="closeUpdateValBtn" aria-label="Close">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+      <div class="modal-body" style="padding: 24px;">
+        <input type="hidden" id="updateValId" />
+        <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 20px;">
+          <div style="font-size: 0.78rem; opacity: 0.55; margin-bottom: 4px;">Initial Investment</div>
+          <div style="font-weight: 700; font-size: 1.1rem;" id="updateValOriginal">€0.00</div>
+        </div>
+        <div class="form-group" style="margin-bottom:24px;">
+          <label class="form-label" for="updateValAmount">Current Market Value</label>
+          <div class="amount-wrap">
+            <span class="currency-symbol">€</span>
+            <input type="number" id="updateValAmount" class="form-input amount-input" placeholder="0.00" min="0" step="0.01" />
+          </div>
+        </div>
+        <div id="updateValPreview" style="text-align:center; font-size:1rem; font-weight:600; margin-bottom:20px; min-height:24px;"></div>
+        <button class="btn btn--primary" id="confirmUpdateValBtn" style="width:100%;">Save Valuation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Sell / Liquidate Investment -->
+  <div class="modal-backdrop" id="sellInvestBackdrop">
+    <div class="modal" id="sellInvestModal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h2 class="modal-title" id="sellInvestTitle">Sell Investment</h2>
+        <button class="modal-close" id="closeSellInvestBtn" aria-label="Close">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+      <div class="modal-body" style="padding: 24px;">
+        <input type="hidden" id="sellInvestId" />
+        <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 20px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span style="font-size:0.78rem; opacity:0.55;">Invested</span>
+            <span style="font-weight:600;" id="sellOriginal">€0.00</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="font-size:0.78rem; opacity:0.55;">Last Valuation</span>
+            <span style="font-weight:600;" id="sellCurrentVal">€0.00</span>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="sellAmount">Sale Price Received</label>
+          <div class="amount-wrap">
+            <span class="currency-symbol">€</span>
+            <input type="number" id="sellAmount" class="form-input amount-input" placeholder="0.00" min="0" step="0.01" />
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">Return To Account</label>
+          <div style="display:flex;gap:10px;">
+            <button class="type-tab active" id="sellToCash" type="button">💵 Cash</button>
+            <button class="type-tab" id="sellToCard" type="button">💳 Card</button>
+          </div>
+        </div>
+        <div id="sellPreview" style="text-align:center; font-size:1rem; font-weight:600; margin-bottom:20px; min-height:24px;"></div>
+        <button class="btn btn--primary" id="confirmSellBtn" style="width:100%; background: linear-gradient(135deg, #10f9a2, #06b6d4);">
+          <span class="material-symbols-rounded" style="font-size:18px;vertical-align:-3px;">sell</span>
+          Confirm Sale
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: Transfer Between Accounts -->
   <div class="modal-backdrop" id="transferBackdrop">
     <div class="modal" id="transferModal" role="dialog" aria-modal="true">
@@ -872,7 +1076,7 @@
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc, writeBatch, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getFirestore, enableIndexedDbPersistence, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc, writeBatch, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -888,6 +1092,17 @@
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
     const auth = getAuth(app);
+
+    // ── Enable offline persistence ──
+    enableIndexedDbPersistence(db).catch((err) => {
+      if (err.code === 'failed-precondition') {
+        console.warn("Firestore persistence failed: multiple tabs open.");
+      } else if (err.code === 'unimplemented') {
+        console.warn("Firestore persistence not supported by browser.");
+      } else {
+        console.warn("Firestore persistence error:", err);
+      }
+    });
 
     // ── Expose Firestore helpers to app.js (non-module)
     window.db           = db;
@@ -909,36 +1124,52 @@
       if (!user) return;
       window.firebaseUid = user.uid;
 
+      // Initialize transaction & loans maps for O(1) lookups
+      const transactionsMap = new Map();
+      const loansMap = new Map();
+      const investmentsMap = new Map();
+
       // Attach real-time listener now that auth is valid
       const txRef = collection(db, 'transactions');
       onSnapshot(txRef, (snapshot) => {
-        // Make sure app.js has initialised transactions array
-        if (!window._transactions) window._transactions = [];
+        // Sync map if the size doesn't match the current global array
+        if (window._transactions && transactionsMap.size !== window._transactions.length) {
+          transactionsMap.clear();
+          window._transactions.forEach(t => transactionsMap.set(t.id, t));
+        }
 
-        // Incremental patch – only process changed docs
+        let hasChanges = false;
         snapshot.docChanges().forEach(change => {
+          const docId = change.doc.id;
           if (change.type === 'added') {
-            if (!window._transactions.find(t => t.id === change.doc.id)) {
-              window._transactions.push({ id: change.doc.id, ...change.doc.data() });
+            if (!transactionsMap.has(docId)) {
+              transactionsMap.set(docId, { id: docId, ...change.doc.data() });
+              hasChanges = true;
             }
           } else if (change.type === 'modified') {
-            const idx = window._transactions.findIndex(t => t.id === change.doc.id);
-            if (idx !== -1) window._transactions[idx] = { id: change.doc.id, ...change.doc.data() };
+            transactionsMap.set(docId, { id: docId, ...change.doc.data() });
+            hasChanges = true;
           } else if (change.type === 'removed') {
-            window._transactions = window._transactions.filter(t => t.id !== change.doc.id);
+            if (transactionsMap.delete(docId)) {
+              hasChanges = true;
+            }
           }
         });
 
-        // Sort descending by date
-        window._transactions.sort((a, b) => b.date.localeCompare(a.date));
+        // Only sort, serialize, and refresh if there were actual changes or initial load
+        if (hasChanges || !window._transactions) {
+          window._transactions = Array.from(transactionsMap.values());
+          // Sort descending by date
+          window._transactions.sort((a, b) => b.date.localeCompare(a.date));
 
-        // ── PERSISTENCE: Instant Local Mirror ── (Ensures data is NEVER lost)
-        localStorage.setItem('fintrack_cache_transactions', JSON.stringify(window._transactions));
+          // ── PERSISTENCE: Instant Local Mirror ── (Ensures data is NEVER lost)
+          localStorage.setItem('fintrack_cache_transactions', JSON.stringify(window._transactions));
 
-        // Sync into app.js global transactions array and trigger a debounced render
-        window.transactions = window._transactions;
+          // Sync into app.js global transactions array and trigger a debounced render
+          window.transactions = window._transactions;
 
-        if (typeof scheduleRefresh === 'function') scheduleRefresh();
+          if (typeof scheduleRefresh === 'function') scheduleRefresh();
+        }
 
       }, err => {
         console.error('Firestore error:', err);
@@ -956,24 +1187,40 @@
       const loansRef = collection(db, 'loans');
       onSnapshot(loansRef, (snapshot) => {
         if (!window._loans) window._loans = [];
+        
+        // Sync map if the size doesn't match the current global array
+        if (window._loans && loansMap.size !== window._loans.length) {
+          loansMap.clear();
+          window._loans.forEach(l => loansMap.set(l.id, l));
+        }
+
+        let hasChanges = false;
         snapshot.docChanges().forEach(change => {
+          const docId = change.doc.id;
           if (change.type === 'added') {
-            if (!window._loans.find(l => l.id === change.doc.id))
-              window._loans.push({ id: change.doc.id, ...change.doc.data() });
+            if (!loansMap.has(docId)) {
+              loansMap.set(docId, { id: docId, ...change.doc.data() });
+              hasChanges = true;
+            }
           } else if (change.type === 'modified') {
-            const idx = window._loans.findIndex(l => l.id === change.doc.id);
-            if (idx !== -1) window._loans[idx] = { id: change.doc.id, ...change.doc.data() };
+            loansMap.set(docId, { id: docId, ...change.doc.data() });
+            hasChanges = true;
           } else if (change.type === 'removed') {
-            window._loans = window._loans.filter(l => l.id !== change.doc.id);
+            if (loansMap.delete(docId)) {
+              hasChanges = true;
+            }
           }
         });
         
-        // Sort descending by date
-        window._loans.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        if (hasChanges || !window._loans) {
+          window._loans = Array.from(loansMap.values());
+          // Sort descending by date
+          window._loans.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
-        localStorage.setItem('fintrack_loans', JSON.stringify(window._loans));
-        window.loans = window._loans;
-        if (typeof renderLoans === 'function') renderLoans();
+          localStorage.setItem('fintrack_loans', JSON.stringify(window._loans));
+          window.loans = window._loans;
+          if (typeof renderLoans === 'function') renderLoans();
+        }
       });
       
       // ── Savings Goal real-time listener ──
@@ -990,6 +1237,45 @@
       }, err => {
         console.error('Goal sync error:', err);
       });
+
+      // ── Investments real-time listener ──
+      const investmentsRef = collection(db, 'investments');
+      onSnapshot(investmentsRef, (snapshot) => {
+        if (!window._investments) window._investments = [];
+
+        // Sync map if the size doesn't match the current global array
+        if (window._investments && investmentsMap.size !== window._investments.length) {
+          investmentsMap.clear();
+          window._investments.forEach(inv => investmentsMap.set(inv.id, inv));
+        }
+
+        let hasChanges = false;
+        snapshot.docChanges().forEach(change => {
+          const docId = change.doc.id;
+          if (change.type === 'added') {
+            if (!investmentsMap.has(docId)) {
+              investmentsMap.set(docId, { id: docId, ...change.doc.data() });
+              hasChanges = true;
+            }
+          } else if (change.type === 'modified') {
+            investmentsMap.set(docId, { id: docId, ...change.doc.data() });
+            hasChanges = true;
+          } else if (change.type === 'removed') {
+            if (investmentsMap.delete(docId)) {
+              hasChanges = true;
+            }
+          }
+        });
+
+        if (hasChanges || !window._investments) {
+          window._investments = Array.from(investmentsMap.values());
+          window._investments.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+          localStorage.setItem('fintrack_investments', JSON.stringify(window._investments));
+          window.investments = window._investments;
+          if (typeof renderInvestments === 'function') renderInvestments();
+          if (typeof renderDashboardInvestments === 'function') renderDashboardInvestments();
+        }
+      });
     });
 
     // ── Export Utility ──
@@ -998,6 +1284,7 @@
            transactions: window._transactions || [],
            accountBases: JSON.parse(localStorage.getItem('fintrack_account_bases_v3') || '{}'),
            loans: JSON.parse(localStorage.getItem('fintrack_loans') || '[]'),
+           investments: JSON.parse(localStorage.getItem('fintrack_investments') || '[]'),
            savingsGoal: JSON.parse(localStorage.getItem('fintrack_savings_goal') || 'null'),
            monthlyBudgets: JSON.parse(localStorage.getItem('fintrack_monthly_budgets') || '{}'),
            recurringRules: JSON.parse(localStorage.getItem('fintrack_recurring_rules') || '[]'),
