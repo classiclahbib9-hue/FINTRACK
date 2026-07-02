@@ -1634,33 +1634,59 @@ function doTransfer() {
     const from = _transferFrom;
     const to = from === 'cash' ? 'card' : 'cash';
     if ((accountBases[from] || 0) < amount) { showToast('Insufficient balance.'); return; }
+    
+    // Update balances
     accountBases[from] = Math.round(((accountBases[from] || 0) - amount) * 100) / 100;
     accountBases[to] = Math.round(((accountBases[to] || 0) + amount) * 100) / 100;
     saveAccountBases();
-    const transferTx = {
+
+    // Create TWO transactions so it appears in the history of both accounts
+    const transferExpense = {
         type: 'expense',
         amount,
         category: 'Transfer',
         date: todayISO(),
-        note: `${from === 'cash' ? 'Cash' : 'Card'} to ${to === 'cash' ? 'Cash' : 'Card'}`,
+        note: `To ${to === 'cash' ? 'Cash' : 'Card'}`,
         account: from,
         transferTo: to,
         isTransfer: true
     };
+    
+    const transferIncome = {
+        type: 'income',
+        amount,
+        category: 'Transfer',
+        date: todayISO(),
+        note: `From ${from === 'cash' ? 'Cash' : 'Card'}`,
+        account: to,
+        transferFrom: from,
+        isTransfer: true
+    };
+
     try {
         const txRef = window.fbCollection(window.db, 'transactions');
-        window.fbAddDoc(txRef, transferTx).catch(err => {
-            console.error('Error saving transfer reference:', err);
-            const localTransfer = { id: uid(), ...transferTx };
-            transactions = [localTransfer, ...transactions];
+        
+        // Save both to Firestore
+        window.fbAddDoc(txRef, transferExpense).catch(err => {
+            console.error('Error saving transfer expense:', err);
+            transactions = [{ id: uid(), ...transferExpense }, ...transactions];
             localStorage.setItem('fintrack_cache_transactions', JSON.stringify(transactions));
             scheduleRefresh();
         });
+        
+        window.fbAddDoc(txRef, transferIncome).catch(err => {
+            console.error('Error saving transfer income:', err);
+            transactions = [{ id: uid(), ...transferIncome }, ...transactions];
+            localStorage.setItem('fintrack_cache_transactions', JSON.stringify(transactions));
+            scheduleRefresh();
+        });
+        
     } catch (err) {
-        const localTransfer = { id: uid(), ...transferTx };
-        transactions = [localTransfer, ...transactions];
+        // Fallback if offline / Firebase not loaded
+        transactions = [{ id: uid(), ...transferIncome }, { id: uid(), ...transferExpense }, ...transactions];
         localStorage.setItem('fintrack_cache_transactions', JSON.stringify(transactions));
     }
+    
     closeTransferModal();
     scheduleRefresh();
     syncToSheet("TRANSFER", { transfer: { from, to, amount, date: todayISO() } });
